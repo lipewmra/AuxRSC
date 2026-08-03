@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  /* System icons in navy blue by default */
+  svg.lucide {
+    color: #132247;
+  }
+
+  /* Icons inside solid colored badges/buttons preserve contrast */
+  .bg-navy svg.lucide,
+  button.bg-slate-900 svg.lucide,
+  button.bg-[#132247] svg.lucide,
+  .bg-[#132247] svg.lucide,
+  .bg-[#54B0EE] svg.lucide {
+    color: currentColor;
+  }
+}
+
+@layer utilities {
+  /* Palette Colors */
+  .text-navy {
+    color: #132247 !important;
+  }
+  .bg-navy {
+    background-color: #132247 !important;
+  }
+  .border-navy {
+    border-color: #132247 !important;
+  }
+
+  /* Gold Text & Accents (Readable gold for dark & light backgrounds) */
+  .text-gold {
+    color: #C28600 !important;
+  }
+  .text-gold-bright {
+    color: #EAA816 !important;
+  }
+  .bg-gold {
+    background-color: #EAA816 !important;
+  }
+  .border-gold {
+    border-color: #EAA816 !important;
+  }
+
+  /* Sky Blue Accents */
+  .text-sky-blue {
+    color: #2B96E3 !important;
+  }
+  .bg-sky-blue {
+    background-color: #54B0EE !important;
+  }
+  .border-sky-blue {
+    border-color: #54B0EE !important;
+  }
+
+  /* Cream Fills */
+  .bg-cream {
+    background-color: #FEF0B2 !important;
+  }
+  .bg-cream-light {
+    background-color: #FFF8D6 !important;
+  }
+  .border-cream {
+    border-color: #FCE282 !important;
+  }
+}

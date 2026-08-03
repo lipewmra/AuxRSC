@@ -1,0 +1,6 @@
+{
+  "name": "Auxiliador de Preenchimento do RSC-TAE",
+  "description": "Sistema de auxílio no preenchimento da Calculadora RSC (PCCTAE/EBTT) com extração de dados de comprovantes e suporte de IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
