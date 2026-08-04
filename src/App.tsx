@@ -272,7 +272,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans flex flex-col w-full overflow-x-hidden">
       {/* Fixed Notice Banner Top */}
       <div className="bg-[#FEF0B2] border-b-2 border-[#EAA816] text-[#132247] px-4 py-2 text-xs text-center font-medium flex items-center justify-center gap-2 shadow-2xs">
         <AlertTriangle className="h-4 w-4 text-[#132247] shrink-0" />
@@ -363,8 +363,8 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 space-y-2 flex flex-col items-center">
+      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto w-full">
+        <div className="max-w-7xl mx-auto px-4 space-y-3 flex flex-col items-center">
           <img 
             src={footerLogo} 
             alt="RSC TAE Logomarca" 
@@ -375,14 +375,32 @@ export default function App() {
           <p className="font-semibold text-slate-800">
             Auxiliador de Preenchimento do RSC-TAE • Sistema de Suporte à Calculadora RSC (PCCTAE/EBTT)
           </p>
-          <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
-            <span>Desenvolvido por / Créditos de criação:</span>
-            <strong className="text-slate-800 font-bold">Philippe Wagner Melo Regis de Araujo</strong>
-            <span className="text-indigo-600 inline-flex items-center gap-0.5 ml-1">
-              <Mail className="h-3 w-3 inline" />
-              philippewagnermra@gmail.com
-            </span>
-          </p>
+          <div className="text-[11px] text-slate-500 flex flex-col items-center justify-center gap-1.5">
+            <span className="font-semibold text-slate-700">Desenvolvido por / Créditos de criação:</span>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 flex-wrap">
+              <span className="inline-flex items-center gap-1 flex-wrap justify-center">
+                <strong className="text-slate-800 font-bold">Philippe Wagner Melo Regis de Araujo</strong>
+                <a
+                  href="mailto:philippewagnermra@gmail.com"
+                  className="text-indigo-600 hover:underline inline-flex items-center gap-0.5"
+                >
+                  <Mail className="h-3 w-3 inline text-indigo-600" />
+                  philippewagnermra@gmail.com
+                </a>
+              </span>
+              <span className="hidden sm:inline text-slate-300">•</span>
+              <span className="inline-flex items-center gap-1 flex-wrap justify-center">
+                <strong className="text-slate-800 font-bold">Paulo Henrique Maciel Oliveira</strong>
+                <a
+                  href="mailto:ph.macieloliveira@gmail.com"
+                  className="text-indigo-600 hover:underline inline-flex items-center gap-0.5"
+                >
+                  <Mail className="h-3 w-3 inline text-indigo-600" />
+                  ph.macieloliveira@gmail.com
+                </a>
+              </span>
+            </div>
+          </div>
           <p className="text-[10px] text-slate-400">
             Fundamentado na Lei nº 15.367/2026, Decreto nº 13.048/2026 e Resoluções Oficiais de Avaliação do RSC.
           </p>
