@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RSCItem, UserProfile } from '../types';
 import { RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
-import { getApiHeaders } from '../utils/apiKey';
+import { getApiHeaders, getStoredGeminiApiKey } from '../utils/apiKey';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -28,6 +28,7 @@ interface ComplianceSummaryProps {
   rscItems: RSCItem[];
   userProfile: UserProfile;
   onOpenExport: () => void;
+  onRequireApiKey?: (reason: string) => void;
 }
 
 const AREA_CHECKBOX_OPTIONS = [
@@ -49,6 +50,7 @@ export const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({
   rscItems,
   userProfile,
   onOpenExport,
+  onRequireApiKey,
 }) => {
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedDemonstracao, setCopiedDemonstracao] = useState(false);
@@ -152,6 +154,13 @@ Local, ${new Date().toLocaleDateString('pt-BR')}.`;
   };
 
   const handleGenerateDemonstracaoWithAI = async () => {
+    if (!getStoredGeminiApiKey()) {
+      if (onRequireApiKey) {
+        onRequireApiKey('A elaboração do texto do Memorial Descritivo com IA exige a inserção prévia de uma Chave do Google Gemini.');
+      }
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/generate-memorial-demonstracao', {
@@ -179,6 +188,15 @@ Local, ${new Date().toLocaleDateString('pt-BR')}.`;
       });
 
       const data = await response.json();
+      if (!response.ok || data.error) {
+        if (data.error && (data.error.includes('Chave') || data.error.includes('API') || data.error.includes('GEMINI_API_KEY'))) {
+          if (onRequireApiKey) {
+            onRequireApiKey('Sua Chave de API do Gemini precisa ser inserida ou atualizada.');
+          }
+          return;
+        }
+      }
+
       if (data.success && data.demonstracaoTexto) {
         setGeneratedDemonstracaoText(data.demonstracaoTexto);
       } else {

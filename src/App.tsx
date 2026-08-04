@@ -14,7 +14,7 @@ import { ExportImportModal } from './components/ExportImportModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { OnboardingTutorialModal } from './components/OnboardingTutorialModal';
 import { RscIntroAnimationModal } from './components/RscIntroAnimationModal';
-import { getApiHeaders } from './utils/apiKey';
+import { getApiHeaders, getStoredGeminiApiKey } from './utils/apiKey';
 import footerLogo from './assets/images/regenerated_image_1785769091029.png';
 
 export default function App() {
@@ -41,9 +41,21 @@ export default function App() {
   // Modals & Overlay States
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [apiKeyModalReason, setApiKeyModalReason] = useState<string | null>(null);
   const [isTutorialModalOpen, setIsTutorialModalOpen] = useState(false);
   const [isIntroAnimationOpen, setIsIntroAnimationOpen] = useState(false);
   const [exportImportModalMode, setExportImportModalMode] = useState<'export' | 'import' | null>(null);
+
+  // Helper to verify if API key exists before triggering AI operations
+  const ensureApiKey = (reason: string): boolean => {
+    const key = getStoredGeminiApiKey();
+    if (!key || !key.trim()) {
+      setApiKeyModalReason(reason);
+      setIsApiKeyModalOpen(true);
+      return false;
+    }
+    return true;
+  };
 
   // Auto-open celebration animation then tutorial on first visit
   useEffect(() => {
@@ -75,6 +87,14 @@ export default function App() {
 
   // Run Gemini PDF Analysis Server-Side
   const handleStartAnalysis = async () => {
+    if (
+      !ensureApiKey(
+        'A verificação e análise automática de comprovantes em PDF via IA exige o cadastro prévio da sua Chave de API do Gemini.'
+      )
+    ) {
+      return;
+    }
+
     const docsToAnalyze = documents.filter((d) => !d.analyzed && d.base64Data);
     if (docsToAnalyze.length === 0) {
       setActiveStep(4);
@@ -191,6 +211,14 @@ export default function App() {
 
   // Regenerate Justification via API
   const handleRegenerateJustification = async (item: RSCItem) => {
+    if (
+      !ensureApiKey(
+        'A geração e aprimoramento de justificativas com IA exige o cadastro prévio da sua Chave de API do Gemini.'
+      )
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch('/api/generate-justification', {
         method: 'POST',
@@ -326,6 +354,10 @@ export default function App() {
             rscItems={rscItems}
             userProfile={userProfile}
             onOpenExport={() => setExportImportModalMode('export')}
+            onRequireApiKey={(reason) => {
+              setApiKeyModalReason(reason);
+              setIsApiKeyModalOpen(true);
+            }}
           />
         )}
       </main>
@@ -366,7 +398,14 @@ export default function App() {
         }}
       />
       <LegalKnowledgeBase isOpen={isLegalModalOpen} onClose={() => setIsLegalModalOpen(false)} />
-      <ApiKeyModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} />
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => {
+          setIsApiKeyModalOpen(false);
+          setApiKeyModalReason(null);
+        }}
+        requiredReason={apiKeyModalReason}
+      />
       <OnboardingTutorialModal
         isOpen={isTutorialModalOpen}
         onClose={() => setIsTutorialModalOpen(false)}
