@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Mail } from 'lucide-react';
 import { UserProfile, UploadedDocument, RSCItem, SessionState } from './types';
 import { STANDARD_CATEGORIES } from './data/rscStructure';
@@ -11,6 +11,10 @@ import { RscCalculatorOrganizer } from './components/RscCalculatorOrganizer';
 import { ComplianceSummary } from './components/ComplianceSummary';
 import { LegalKnowledgeBase } from './components/LegalKnowledgeBase';
 import { ExportImportModal } from './components/ExportImportModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
+import { OnboardingTutorialModal } from './components/OnboardingTutorialModal';
+import { RscIntroAnimationModal } from './components/RscIntroAnimationModal';
+import { getApiHeaders } from './utils/apiKey';
 import footerLogo from './assets/images/regenerated_image_1785769091029.png';
 
 export default function App() {
@@ -36,7 +40,18 @@ export default function App() {
 
   // Modals & Overlay States
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isTutorialModalOpen, setIsTutorialModalOpen] = useState(false);
+  const [isIntroAnimationOpen, setIsIntroAnimationOpen] = useState(false);
   const [exportImportModalMode, setExportImportModalMode] = useState<'export' | 'import' | null>(null);
+
+  // Auto-open celebration animation then tutorial on first visit
+  useEffect(() => {
+    const hasSeen = localStorage.getItem('rsc_has_seen_tutorial_v1');
+    if (!hasSeen) {
+      setIsIntroAnimationOpen(true);
+    }
+  }, []);
 
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -82,7 +97,7 @@ export default function App() {
       try {
         const response = await fetch('/api/analyze-pdf', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getApiHeaders(),
           body: JSON.stringify({
             base64Data: doc.base64Data,
             fileName: doc.fileName,
@@ -179,7 +194,7 @@ export default function App() {
     try {
       const response = await fetch('/api/generate-justification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({ item, userProfile }),
       });
 
@@ -247,6 +262,8 @@ export default function App() {
         onOpenExport={() => setExportImportModalMode('export')}
         onOpenImport={() => setExportImportModalMode('import')}
         onOpenLegalModal={() => setIsLegalModalOpen(true)}
+        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        onOpenTutorial={() => setIsIntroAnimationOpen(true)}
       />
 
       {/* Step Tracker */}
@@ -341,7 +358,23 @@ export default function App() {
       </footer>
 
       {/* Modals */}
+      <RscIntroAnimationModal
+        isOpen={isIntroAnimationOpen}
+        onComplete={() => {
+          setIsIntroAnimationOpen(false);
+          setIsTutorialModalOpen(true);
+        }}
+      />
       <LegalKnowledgeBase isOpen={isLegalModalOpen} onClose={() => setIsLegalModalOpen(false)} />
+      <ApiKeyModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} />
+      <OnboardingTutorialModal
+        isOpen={isTutorialModalOpen}
+        onClose={() => setIsTutorialModalOpen(false)}
+        onOpenApiKeyModal={() => {
+          setIsTutorialModalOpen(false);
+          setIsApiKeyModalOpen(true);
+        }}
+      />
 
       <ExportImportModal
         mode={exportImportModalMode || 'export'}

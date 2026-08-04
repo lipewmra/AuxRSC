@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RSCItem, UserProfile } from '../types';
 import { RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
+import { getApiHeaders } from '../utils/apiKey';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -155,7 +156,7 @@ Local, ${new Date().toLocaleDateString('pt-BR')}.`;
     try {
       const response = await fetch('/api/generate-memorial-demonstracao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           userProfile,
           trajetoriaData: {

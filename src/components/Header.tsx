@@ -1,8 +1,9 @@
 import React from 'react';
-import { Calculator, Download, Upload, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Calculator, Download, Upload, ExternalLink, ShieldCheck, KeyRound, HelpCircle } from 'lucide-react';
 import { UserProfile, RSCItem } from '../types';
 import { RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
 import headerLogo from '../assets/images/regenerated_image_1785769089212.png';
+import { getStoredGeminiApiKey } from '../utils/apiKey';
 
 interface HeaderProps {
   userProfile: UserProfile;
@@ -12,6 +13,8 @@ interface HeaderProps {
   onOpenExport: () => void;
   onOpenImport: () => void;
   onOpenLegalModal: () => void;
+  onOpenApiKeyModal: () => void;
+  onOpenTutorial: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,7 +25,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onOpenImport,
   onOpenLegalModal,
+  onOpenApiKeyModal,
+  onOpenTutorial,
 }) => {
+  const hasCustomKey = !!getStoredGeminiApiKey();
   const targetLevel = userProfile.rscAlmejado || 'RSC-PCCTAE I';
   const evaluation = evaluateRSCCompliance(rscItems, targetLevel);
   const {
@@ -97,6 +103,33 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-2 shrink-0">
+              <button
+                type="button"
+                onClick={onOpenTutorial}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-[#132247] hover:bg-[#1C3366] border border-[#EAA816] rounded-md transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Abrir Tutorial e Guia de Uso do Sistema"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-[#EAA816]" />
+                <span>Tutorial</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenApiKeyModal}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                  hasCustomKey
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-white text-[#132247] border-slate-300 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]'
+                }`}
+                title="Configurar sua Chave de API do Google Gemini"
+              >
+                <KeyRound className={`h-3.5 w-3.5 ${hasCustomKey ? 'text-emerald-700' : 'text-[#132247]'}`} />
+                <span className="hidden sm:inline">Chave IA</span>
+                {hasCustomKey && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={onOpenLegalModal}
