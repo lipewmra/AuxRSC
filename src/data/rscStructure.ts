@@ -164,6 +164,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo I - Item 1 (3,0 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Portaria, resolução ou ato de nomeação/eleição; atas ou lista oficial de membros; declaração da secretaria do conselho com função e período do mandato.',
+    exemplos: 'Conselho Superior (CONSUP), Conselho de Ensino, Pesquisa e Extensão (CEPE/CONSEPE), Conselho de Campus, Conselho Diretor, Conselho de Administração, Conselho Editorial, Conselhos Gestores de unidades acadêmicas ou administrativas, Conselhos de Centros de Referência, Conselhos de Hospitais Veterinários, Fazendas-Escola.',
+    observacoes: 'Reconhece o exercício de mandato como membro titular ou suplente em efetivo exercício. Não se aplica a comissões, grupos de trabalho, comitês ou núcleos, que possuem critérios específicos nos Itens 2 e 3 do Requisito I.',
   },
   {
     code: 'I.2',
@@ -173,6 +176,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 2 (4,5 pts por designação)',
+    documentosComprovacao: 'Portaria, resolução ou ato formal de designação indicando coordenação/presidência; declaração da autoridade competente; atas, relatórios ou produtos que evidenciem a atuação.',
+    exemplos: 'Coordenação/presidência da Comissão Interna de Supervisão do PCCTAE (CIS), Comissão Própria de Avaliação (CPA), Comissão de Ética, Comissão de Heteroidentificação, Comissão de Processo Seletivo, Comissão de Inventário, Estágio Probatório, Flexibilização da Jornada, NAPNE, NEABI, NEGED, Núcleo de Gestão Ambiental, Comitê de Governança Digital, Integridade, LGPD, GT do PDI ou GT de implantação de sistemas.',
+    observacoes: 'Exige o exercício efetivo da coordenação ou presidência. Não se aplica à simples participação como membro, hipótese contemplada no Item 3.',
   },
   {
     code: 'I.3',
@@ -182,6 +188,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 3 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria, resolução ou ato formal de designação como membro; declaração da unidade responsável; atas, listas de presença ou relatório de atividades.',
+    exemplos: 'Participação na condição de membro em comissões permanentes ou temporárias, GTs, comitês e núcleos (CIS, CPA, Comissão de Ética, Heteroidentificação, Processo Seletivo, Inventário, Estágio Probatório, Flexibilização, NAPNE, NEABI, NEGED, LGPD, PDI, etc.).',
+    observacoes: 'Reconhece a participação na condição de membro regularmente designado, não abrangendo o exercício da coordenação ou presidência (previsto no Item 2).',
   },
   {
     code: 'I.4',
@@ -191,6 +200,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 4 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria ou ato de designação; termo de compromisso/encargo; certidão da unidade correcional ou cópia da peça de conclusão (preservados dados sigilosos).',
+    exemplos: 'Membro ou Presidente de Comissão de PAD; Membro ou Presidente de Sindicância; Defensor Dativo; Membro ou Presidente de Tomada de Contas Especial.',
+    observacoes: 'Busca reconhecer a atuação em processos formais de apuração de materialidade e responsabilidade, características da atividade correcional na Administração Pública.',
   },
   {
     code: 'I.5',
@@ -200,6 +212,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 5 (4,5 pts por designação)',
+    documentosComprovacao: 'Portaria, edital ou ordem de serviço com a designação; declaração da comissão organizadora; relatório, ata ou comprovante de participação na execução/fiscalização.',
+    exemplos: 'Membro de comissão organizadora, coordenador-geral, coordenador de local ou de aplicação; fiscal de sala, fiscal volante ou de corredor; aplicador de provas; apoio à execução do certame; certificador do INEP no ENEM; processos seletivos para ingresso em cursos técnicos, superiores e pós-graduação; seleções internas (PIBIC, PIBITI, PIBEX, monitoria, assistência estudantil).',
+    observacoes: 'Reconhece a atuação na organização, fiscalização ou aplicação de seleções e concursos, não abrangendo elaboração, revisão ou correção de provas (Item 6).',
   },
   {
     code: 'I.6',
@@ -209,6 +224,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 6 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria, contrato, ordem de serviço ou declaração da banca; termo de confidencialidade ou recibo; declaração com atividade e período (sem revelar conteúdo sigiloso).',
+    exemplos: 'Elaboração, revisão técnica e correção de provas de concursos públicos, vestibulares, processos seletivos; elaboração ou revisão de questões objetivas, discursivas e redações; atuação em bancas elaboradoras, revisoras e corretoras.',
+    observacoes: 'Reconhece a atuação na elaboração, revisão e correção de provas, não abrangendo organização/fiscalização (Item 5).',
   },
   {
     code: 'I.7',
@@ -218,6 +236,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.5,
     unitType: 'por_ano',
     legalRef: 'Anexo I - Item 7 (1,5 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Ata de eleição e posse; registro ou declaração da entidade sindical; documento que identifique cargo e período do mandato.',
+    exemplos: 'Presidente, Vice-Presidente, Secretário-Geral, Diretor, Tesoureiro, membro do Conselho Fiscal ou outros cargos previstos no estatuto da entidade sindical (seções sindicais do SINASEFE, sindicatos filiados à FASUBRA).',
+    observacoes: 'Reconhece exclusivamente o exercício de mandato eleito e empossado em entidade sindical da categoria. Não abrange simples filiação, assembleias, movimentos grevistas ou comissões sem mandato formal.',
   },
   {
     code: 'I.8',
@@ -227,6 +248,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 8 (3,0 pts por designação)',
+    documentosComprovacao: 'Ato ou convite formal de designação; plano/termo do programa ou projeto; relatório, entrega, indicador ou declaração da instituição demonstrando resultado institucional relevante.',
+    exemplos: 'Atuação como membro em programas ou projetos como Mulheres Mil, Programa Saúde na Escola (PSE), Programa de Aquisição de Alimentos (PAA), PNAE, projetos FINEP/CNPq/CAPES, ações interinstitucionais com ministérios, estados ou municípios.',
+    observacoes: 'Exige designação formal E comprovação de resultados institucionais relevantes decorrentes da atuação. Não se confunde com projetos acadêmicos e internos da IFE (Requisito II).',
   },
   {
     code: 'I.9',
@@ -236,6 +260,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 9 (7,5 pts por designação)',
+    documentosComprovacao: 'Portaria, procuração ou ato de representação/designação; registro de responsabilidade técnica no conselho/órgão competente; declaração do órgão externo ou protocolo.',
+    exemplos: 'Representante junto ao MEC, MGI, TCU, CGU, Ministério Público, Conselhos Profissionais (CREA, CRQ, CRMV, CRB, CRP, CREFITO, etc.), Receita Federal, INPI, IBAMA, Vigilância Sanitária, Corpo de Bombeiros, agências reguladoras.',
+    observacoes: 'Reconhece a representação institucional formal ou o exercício de responsabilidade técnica perante órgãos externos. Não se aplica a reuniões casuais sem delegação oficial.',
   },
   {
     code: 'I.10',
@@ -245,6 +272,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo I - Item 10 (4,5 pts por produto)',
+    documentosComprovacao: 'Autorização ou reconhecimento formal da IFE; convite, termo de cooperação ou designação externa; produto técnico entregue e declaração/relatório sobre a contribuição ou repercussão institucional.',
+    exemplos: 'Atuações técnicas desenvolvidas com autorização em órgãos públicos, entidades paraestatais, escolas de governo, agências reguladoras, fundações, organizações internacionais, cooperação técnica com MEC, CAPES, CNPq, FINEP, CONIF, ENAP.',
+    observacoes: 'Reconhece a atuação técnica externa formalmente autorizada que resulte em repercussão institucional. Não se aplica a serviços exclusivamente pessoais sem vínculo formal.',
   },
 
   // --- REQUISITO II (Anexo II) ---
@@ -256,6 +286,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 1 (7,5 pts por projeto)',
+    documentosComprovacao: 'Certificado, declaração ou registro em sistema institucional; portaria, termo de aprovação ou registro do projeto com indicação da coordenação; relatório final ou declaração da área responsável.',
+    exemplos: 'Coordenação de projetos PIBIC, PIBITI, PIBEX, Mulheres Mil, Pronatec, IF Mais Empreendedor, EnergIFE, Autonomia e Renda, Pronasci, Aquicultura, projetos de pesquisa/extensão/inovação, programas de assistência estudantil, incubadoras, empresas juniores.',
+    observacoes: 'Caracterizada pela responsabilidade do planejamento, execução, acompanhamento e prestação de contas do projeto. Não se aplica aos integrantes da equipe executora (Item 2).',
   },
   {
     code: 'II.2',
@@ -265,6 +298,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 2 (4,5 pts por projeto)',
+    documentosComprovacao: 'Certificado, declaração ou registro em sistema institucional; portaria/ordem de serviço ou documento do projeto com a função; produto, relatório ou declaração do coordenador/área responsável.',
+    exemplos: 'Atuação como integrante da equipe técnica, executor, tutor, orientador ou colaborador em projetos institucionais (PIBIC, PIBITI, PIBEX, Mulheres Mil, Pronatec, EnergIFE, projetos de pesquisa/extensão), incluindo a elaboração de projetos pedagógicos de cursos (PPCs).',
+    observacoes: 'Reconhece a participação técnica/especializada em projetos institucionais sem atribuição de coordenação.',
   },
   {
     code: 'II.3',
@@ -274,6 +310,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 3 (7,5 pts por mandato)',
+    documentosComprovacao: 'Portaria, ato editorial ou página oficial do expediente; declaração da editora/periódico com função e período; atas ou relatórios editoriais.',
+    exemplos: 'Editor-chefe, editor associado, editor executivo, editor de seção ou membro de conselho editorial de revistas científicas, periódicos institucionais, editoras universitárias ou coleções acadêmicas.',
+    observacoes: 'Reconhece a participação em comissões/conselhos editoriais. Não abrange a autoria de livros/artigos ou a atuação casual como parecerista ad hoc.',
   },
   {
     code: 'II.4',
@@ -283,6 +322,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 4 (3,0 pts por projeto)',
+    documentosComprovacao: 'Acordo, convênio ou termo de cooperação; portaria/designação ou declaração das instituições; plano de trabalho e relatório/produto da cooperação.',
+    exemplos: 'Projetos institucionais executados mediante cooperação técnica com universidades, Institutos Federais, órgãos da Administração Pública, empresas públicas, Embrapa, FINEP, CNPq, CAPES, ministérios.',
+    observacoes: 'Reconhece a participação em projetos desenvolvidos no âmbito de cooperação técnica formal entre instituições.',
   },
   {
     code: 'II.5',
@@ -292,6 +334,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 5 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria, contrato, termo ou declaração de designação; registro no sistema acadêmico/programa; declaração com orientandos, atividade e período.',
+    exemplos: 'Orientação de bolsistas PIBIC, PIBITI, PIBEX; orientação de pesquisas ou TCCs (quando houver designação institucional); tutoria em cursos presenciais/EAD ou programas como Pronatec/Cursos FIC; preceptoria em hospitais/clínicas; supervisão de estágio obrigatório ou residência técnica.',
+    observacoes: 'Reconhece a atuação formal de acompanhamento e desenvolvimento de estudantes ou participantes de programas institucionais.',
   },
   {
     code: 'II.6',
@@ -301,6 +346,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 6 (3,0 pts por produto)',
+    documentosComprovacao: 'Cópia ou link institucional do material com autoria/créditos; ordem de serviço ou declaração de participação; termo de aprovação, publicação ou entrega do produto.',
+    exemplos: 'Manuais de procedimentos, Procedimentos Operacionais Padrão (POP), roteiros técnicos, guias institucionais, guias de utilização de sistemas (SUAP, SEI), materiais em Braille, Libras, audiodescrição, apostilas adaptadas, produtos de acessibilidade.',
+    observacoes: 'Reconhece a produção de materiais técnicos de referência ou acessíveis destinados ao apoio das atividades institucionais. Não se confunde com produção científica/difusão de conhecimento do Requisito VI.',
   },
   {
     code: 'II.7',
@@ -310,6 +358,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_evento',
     legalRef: 'Anexo II - Item 7 (3,0 pts por evento)',
+    documentosComprovacao: 'Convite, portaria ou declaração da organização; certificado de avaliador/jurado; programação, ata ou lista oficial de participantes.',
+    exemplos: 'Atuação como avaliador ou jurado em congressos, seminários, feiras de ciências, mostras de ensino/extensão/inovação, hackathons, olimpíadas do conhecimento, festivais culturais, CONNEPI, SNCT, eventos do CONIF.',
+    observacoes: 'Reconhece a atuação como avaliador de trabalhos ou jurado em eventos, não abrangendo a atuação como palestrante, instrutor ou organizador.',
   },
   {
     code: 'II.8',
@@ -319,6 +370,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo II - Item 8 (3,0 pts por projeto)',
+    documentosComprovacao: 'Portaria, declaração ou ficha técnica com participação; link/arquivo do produto e registro institucional; relatório, catálogo ou comprovante de publicação/apresentação.',
+    exemplos: 'Produção de videoaulas, vídeos educativos, documentários institucionais, podcasts, webséries, programas para rádio/TV institucional, exposições científicas/culturais, galerias virtuais, animações educativas.',
+    observacoes: 'Reconhece a produção de conteúdo institucional em formatos audiovisuais, artísticos ou expositivos destinados à difusão de conhecimento e comunicação.',
   },
   {
     code: 'II.9',
@@ -328,6 +382,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.0,
     unitType: 'por_hora',
     legalRef: 'Anexo II - Item 9 (1,0 pt por capacitação)',
+    documentosComprovacao: 'Certificado com conteúdo programático, instituição emissora, período e carga horária mínima de 10 horas.',
+    exemplos: 'Capacitações e ações de desenvolvimento de competências promovidas por IFEs, ENAP, Escola Virtual de Governo (EV.G), escolas de governo, órgãos públicos ou instituições reconhecidas.',
+    observacoes: 'Reconhece a participação em programas de formação continuada efetuados no cargo que NÃO tenham sido utilizados para fins de Aceleração da Progressão por Capacitação no PCCTAE. Carga horária mínima: 10 horas.',
   },
   {
     code: 'II.10',
@@ -337,6 +394,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.0,
     unitType: 'por_ano',
     legalRef: 'Anexo II - Item 10 (1,0 pt por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Portaria ou reconhecimento formal da atividade; declaração emitida pelo setor demandante com descrição detalhada da atividade, período, impacto e assinaturas da chefia e do dirigente máximo da unidade.',
+    exemplos: 'Administrador institucional de sistemas corporativos (SUAP, SEI, Moodle), responsável técnico por laboratórios especializados, responsável técnico pela implantação de processos eletrônicos, responsável técnico por infraestrutura crítica de TI, gestor de repositório institucional, implantação de políticas arquivísticas, coordenação técnica de projetos estratégicos.',
+    observacoes: 'O enquadramento exige a presença cumulativa dos requisitos do Decreto: técnica especializada, formalmente reconhecida, domínio diferenciado e contribuição relevante. O simples exercício de atribuições ordinárias do cargo ou função gratificada rotineira NÃO é suficiente.',
   },
   {
     code: 'II.11',
@@ -346,6 +406,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.0,
     unitType: 'por_evento',
     legalRef: 'Anexo II - Item 11 (1,0 pt por evento)',
+    documentosComprovacao: 'Certificado ou declaração de participação com carga horária mínima de 10 horas e período.',
+    exemplos: 'Participação em cursos, capacitações, fóruns, oficinas, workshops, seminários, congressos, jornadas, simpósios, encontros técnicos promovidos por IFEs, escolas de governo, órgãos públicos e entidades reconhecidas.',
+    observacoes: 'Reconhece a participação como ouvinte/congressista em eventos de capacitação e atualização profissional com carga horária mínima de 10 horas.',
   },
 
   // --- REQUISITO III (Anexo III) ---
@@ -357,6 +420,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 20.0,
     unitType: 'por_item',
     legalRef: 'Anexo III - Item 1 (20,0 pts por prêmio)',
+    documentosComprovacao: 'Certificado, diploma ou ato oficial da premiação; regulamento e página oficial que comprovem o âmbito internacional; documento do projeto e comprovação de implementação na administração pública.',
+    exemplos: 'Prêmios de âmbito internacional concedidos a projetos implementados na administração pública por organismos internacionais, entidades multilaterais ou instituições estrangeiras de reconhecida relevância.',
+    observacoes: 'Reconhece o recebimento de premiação internacional por projeto efetivamente implementado. Não abrange premiações acadêmicas individuais, títulos honoríficos ou menções honrosas sem implementação.',
   },
   {
     code: 'III.2',
@@ -366,6 +432,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 15.0,
     unitType: 'por_item',
     legalRef: 'Anexo III - Item 2 (15,0 pts por prêmio)',
+    documentosComprovacao: 'Certificado, diploma ou ato oficial da premiação; regulamento e página oficial que comprovem o âmbito nacional; documento do projeto e comprovação de implementação.',
+    exemplos: 'Prêmio Inovação no Serviço Público, Prêmio de Boas Práticas da Rede Federal, premiações nacionais promovidas por ministérios, escolas de governo, autarquias ou fundações públicas de abrangência nacional.',
+    observacoes: 'Reconhece o recebimento de premiação nacional por projeto implementado na administração pública.',
   },
   {
     code: 'III.3',
@@ -375,6 +444,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo III - Item 3 (7,5 pts por prêmio)',
+    documentosComprovacao: 'Certificado, diploma ou ato oficial da premiação; ato/regulamento que demonstre sua instituição formal; documento do projeto e comprovação de implementação.',
+    exemplos: 'Prêmios de âmbito local ou institucional formalmente instituídos e concedidos por IFEs, órgãos públicos, estados, municípios para projetos de inovação, boas práticas, gestão, ensino, pesquisa, extensão ou sustentabilidade.',
+    observacoes: 'Reconhece o recebimento de premiação local ou institucional formalmente instituída. Não se aplica a certificados de participação, moções de aplauso ou elogios funcionais informais.',
   },
 
   // --- REQUISITO IV (Anexo IV) ---
@@ -386,6 +458,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo IV - Item 1 (4,5 pts por sistema)',
+    documentosComprovacao: 'Portaria, ordem de serviço, chamado ou declaração emitida pelo responsável do setor do sistema com nome do sistema e módulos, perfil de acesso, período de atuação e repercussões funcionais ou financeiras.',
+    exemplos: 'Atuação em sistemas estruturantes: SIOP, SIAFI, SIAFI Web, SIAFI Operacional, Tesouro Gerencial, SISGRU, PagTesouro, SIC (Custos), SIAPE Cadastro, SIAPE Folha, SIAPE Órgão, SIAPE Servidor, SIAPE-Saúde, SIAPEnet, DW SIAPE, SIGEPE, Central SIPEC, eSocial, SIORG, SISG, SIADS, SCDP, SIASG, Compras.gov.br, SINCOV, SISP.',
+    observacoes: 'Reconhece a atuação tecnicamente qualificada que demande conhecimento específico, perfil de acesso próprio e responsabilidade pela análise, inclusão, alteração ou validação de informações. O simples acesso, consulta ou lançamento elementar NÃO é suficiente.',
   },
   {
     code: 'IV.2',
@@ -395,6 +470,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo IV - Item 2 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria ou documento de formalização da demanda/equipe; Projeto Básico (PB) ou Termo de Referência (TR) com identificação da autoria/participação; declaração da área de contratações.',
+    exemplos: 'Elaboração de projeto básico para obras e serviços de engenharia; elaboração de termo de referência para aquisição de materiais ou contratação de serviços e soluções de TI; participação como membro da Equipe de Planejamento da Contratação (Lei nº 14.133/2021); elaboração de Estudos Técnicos Preliminares (ETP).',
+    observacoes: 'Reconhece a atuação na fase de planejamento das contratações públicas, não abrangendo execução e fiscalização contratual (Item 3) ou condução de licitações (Item 4).',
   },
   {
     code: 'IV.3',
@@ -404,6 +482,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo IV - Item 3 (4,5 pts por designação)',
+    documentosComprovacao: 'Portaria ou ato de designação como gestor/fiscal; ou declaração emitida pela área de contratações.',
+    exemplos: 'Gestor de contrato administrativo, fiscal técnico, fiscal administrativo, fiscal setorial, fiscal requisitante; gestor ou fiscal de atas de registro de preços, convênios, termos de execução descentralizada (TED), acordos de cooperação.',
+    observacoes: 'Reconhece o exercício de gestão ou fiscalização da execução contratual formalmente designada.',
   },
   {
     code: 'IV.4',
@@ -413,6 +494,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo IV - Item 4 (3,0 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Portaria, declaração emitida pela área de Administração e Planejamento contendo a atividade executada e o período de atuação.',
+    exemplos: 'Agente de Contratação, Pregoeiro, membro da Comissão de Contratação ou Comissão Especial de Licitação, integrante da equipe de apoio ao Pregoeiro, membro de comissão de credenciamento, condução de procedimentos auxiliares (Lei 14.133/2021) e atuação em dispensas e inexigibilidades de licitação.',
+    observacoes: 'Reconhece a atuação na condução dos processos de licitação e contratações diretas, não abrangendo o planejamento da contratação (Item 2) nem a fiscalização de contratos (Item 3).',
   },
   {
     code: 'IV.5',
@@ -422,6 +506,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo IV - Item 5 (3,0 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Portaria, projeto ou designação; declaração da unidade com descrição da atividade, período e identificação da demanda institucional.',
+    exemplos: 'Integrante de equipes de promoção da saúde do servidor/estudante, saúde ocupacional, vigilância em saúde, saúde mental, bem-estar animal em clínicas/hospitais veterinários; ações de sustentabilidade e educação ambiental; atuação técnica especializada em núcleos como NAPNE e NEABI; programas de diversidade, equidade e inclusão.',
+    observacoes: 'Reconhece o exercício efetivo de atividades técnicas especializadas nessas áreas, não se destinando à simples participação genérica em comissões.',
   },
   {
     code: 'IV.6',
@@ -431,6 +518,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo IV - Item 6 (3,0 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Laudo pericial contendo a condição especial; declaração emitida pela Gestão de Pessoas baseada no laudo pericial e declaração funcional/financeira de NÃO percepção do adicional de insalubridade ou periculosidade pelas mesmas condições.',
+    exemplos: 'Atuação técnica em laboratórios de análises químicas, biológicas, microbiológicas; manipulação de agentes químicos/biológicos em ambientes controlados; operação de emissores de radiação; atuação em biotérios e clínicas veterinárias; manejo de resíduos perigosos; áreas de contenção biológica e salas limpas.',
+    observacoes: 'Reconhece a atuação técnica sob condições especiais de segurança que NÃO gerem o pagamento de adicional financeiro de insalubridade/periculosidade ao servidor.',
   },
   {
     code: 'IV.7',
@@ -440,6 +530,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo IV - Item 7 (3,0 pts por designação)',
+    documentosComprovacao: 'Portaria, ordem de serviço ou designação específica; declaração da chefia de que a atividade NÃO é habitual do cargo; relatório, produto ou registro no sistema.',
+    exemplos: 'Administrador institucional de sistemas corporativos (SUAP, SEI, Moodle); gestor de módulos institucionais; atuação em escritórios de projetos, observatórios, incubadoras, núcleos de inovação tecnológica (NIT); processos de gestão de riscos, governança, integridade, LGPD, desde que mediante designação específica fora das atribuições rotineiras.',
+    observacoes: 'Reconhece a atuação que extrapole as atribuições ordinárias do cargo efetivo mediante designação específica.',
   },
   {
     code: 'IV.8',
@@ -449,6 +542,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_ano',
     legalRef: 'Anexo IV - Item 8 (4,5 pts por ano ou fração acima de 6m)',
+    documentosComprovacao: 'Portaria ou outro ato formal de designação com indicação do período de exercício. Declaração da Gestão de Pessoas como documento complementar.',
+    exemplos: 'Responsável formalmente designado por setor ou unidade administrativa sem percepção de remuneração específica (unidades informais), tais como almoxarifado, patrimônio, protocolo, arquivo, biblioteca, laboratório, secretaria acadêmica, setor de transportes, TI, manutenção, comunicação, ouvidoria, compras, contratos.',
+    observacoes: 'Reconhece a atuação como responsável por setor sem remuneração (sem CD ou FG). Não se aplica a cargos ou funções remuneradas contempladas no Requisito V.',
   },
 
   // --- REQUISITO V (Anexo V) ---
@@ -460,6 +556,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 9.0,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 1 (9,0 pts por ano titular)',
+    documentosComprovacao: 'Portaria de nomeação e exoneração ou declaração/relatório SIAPE (CACODETPFU) emitido pela Gestão de Pessoas com condição de titular e período; Declaração de Cargos e Funções emitida pelo SouGov.',
+    exemplos: 'Exercício do cargo de direção CD-02 (ex: Diretor-Geral de Campus, Pró-Reitor ou equivalente) na condição de titular.',
+    observacoes: 'Decorre do efetivo exercício do cargo. No caso de substituição, apurar separadamente conforme item V.1.B.',
   },
   {
     code: 'V.1.B',
@@ -469,6 +568,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 1 (4,5 pts por ano substituto)',
+    documentosComprovacao: 'Portaria de designação de substituto acompanhada de documento comprovando os períodos efetivamente exercidos (declaração/relatório da Gestão de Pessoas ou fichas financeiras).',
+    exemplos: 'Exercício de substituição do titular em cargo CD-02 devidamente comprovado.',
+    observacoes: 'Considera apenas os dias/períodos em que o servidor efetivamente substituiu o titular. Os períodos de substituição podem ser somados.',
   },
   {
     code: 'V.2.A',
@@ -478,6 +580,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 2 (7,5 pts por ano titular)',
+    documentosComprovacao: 'Portaria de nomeação/exoneração ou relatório SIAPE (CACODETPFU); Declaração de Cargos e Funções emitida pelo SouGov.',
+    exemplos: 'Exercício titular de cargo CD-03 ou CD-04 (Diretores de Diretoria, Chefes de Gabinete, etc.).',
+    observacoes: 'Decorre do efetivo exercício do cargo de direção CD-03/CD-04 na condição de titular.',
   },
   {
     code: 'V.2.B',
@@ -487,6 +592,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 2 (3,0 pts por ano substituto)',
+    documentosComprovacao: 'Portaria de substituição acompanhada de relatório da Gestão de Pessoas ou fichas financeiras comprovando os períodos efetivamente exercidos.',
+    exemplos: 'Exercício formal de substituição nos cargos CD-03 e CD-04.',
+    observacoes: 'Apurado separadamente da condição de titular. Requer comprovação documental dos períodos efetivamente exercidos.',
   },
   {
     code: 'V.3.A',
@@ -496,6 +604,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 3 (4,5 pts por ano titular)',
+    documentosComprovacao: 'Portaria de designação/dispensa ou relatório SIAPE (CACODETPFU); Declaração de Cargos e Funções emitida pelo SouGov.',
+    exemplos: 'Exercício titular de Função Gratificada FG-01 ou FG-02 (Chefes de Departamento, Coordenadores Principais).',
+    observacoes: 'Decorre do efetivo exercício da função gratificada na condição de titular.',
   },
   {
     code: 'V.3.B',
@@ -505,6 +616,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.5,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 3 (1,5 pts por ano substituto)',
+    documentosComprovacao: 'Portaria de substituição acompanhada de relatório da Gestão de Pessoas comprovando os períodos efetivamente exercidos.',
+    exemplos: 'Substituição formal em funções FG-01 e FG-02.',
+    observacoes: 'Apurado separadamente do exercício titular.',
   },
   {
     code: 'V.4.A',
@@ -514,6 +628,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 4 (3,0 pts por ano titular)',
+    documentosComprovacao: 'Portaria de designação/dispensa ou relatório SIAPE (CACODETPFU); Declaração de Cargos e Funções emitida pelo SouGov.',
+    exemplos: 'Exercício titular de Funções Gratificadas FG-03, FG-04, FG-05 ou equivalentes (Chefes de Setor, Coordenadores de Área).',
+    observacoes: 'Aplica-se às funções gratificadas FG-03, FG-04 e FG-05.',
   },
   {
     code: 'V.4.B',
@@ -523,6 +640,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.0,
     unitType: 'por_ano',
     legalRef: 'Anexo V - Item 4 (1,0 pt por ano substituto)',
+    documentosComprovacao: 'Portaria de substituição com relatório da Gestão de Pessoas demonstrando os períodos efetivamente exercidos.',
+    exemplos: 'Substituição formal em funções FG-03, FG-04, FG-05.',
+    observacoes: 'Apurado separadamente do exercício titular.',
   },
 
   // --- REQUISITO VI (Anexo VI) ---
@@ -534,6 +654,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 30.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 1 (30,0 pts por patente)',
+    documentosComprovacao: 'Carta patente ou certidão do INPI/órgão estrangeiro; registro institucional de titularidade ou vínculo; declaração/nota técnica demonstrando relação com os interesses institucionais.',
+    exemplos: 'Cartas patentes concedidas no Brasil ou no exterior relacionadas a produtos, processos, equipamentos ou tecnologias de interesse institucional, nas quais o servidor figure como inventor/titular.',
+    observacoes: 'Reconhece a carta patente efetivamente CONCEDIDA. Não se aplica a pedidos ainda não concedidos (enquadrados no Item 2).',
   },
   {
     code: 'VI.2',
@@ -543,6 +666,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 25.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 2 (25,0 pts por projeto)',
+    documentosComprovacao: 'Comprovante de depósito/registro ou processo institucional de propriedade intelectual; relatório do projeto com contribuição individual; declaração do NIT.',
+    exemplos: 'Participações relevantes no desenvolvimento de protótipos, depósitos de pedidos de patente, registro de programas de computador (software), cultivares, modelos de utilidade, desenhos industriais.',
+    observacoes: 'Reconhece a participação relevante em desenvolvimento tecnológico que resulte em depósito ou registro de propriedade intelectual, mesmo antes da concessão definitiva da patente.',
   },
   {
     code: 'VI.3',
@@ -552,6 +678,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 20.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 3 (20,0 pts por produto)',
+    documentosComprovacao: 'Contrato/termo de transferência, licenciamento ou exploração; registro do ativo e identificação como autor/inventor; declaração do NIT.',
+    exemplos: 'Licenciamento de patentes, cessão de tecnologia, contratos de transferência tecnológica, exploração econômica de ativos tecnológicos, licenças de software, cultivares.',
+    observacoes: 'Reconhece a participação em processos de transferência e exploração comercial de tecnologia.',
   },
   {
     code: 'VI.4',
@@ -561,6 +690,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 15.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 4 (15,0 pts por curso)',
+    documentosComprovacao: 'Diploma ou certificado e histórico escolar; declaração da Gestão de Pessoas de que a titulação NÃO foi utilizada para percepção do IQ atualmente percebido.',
+    exemplos: 'Conclusão de cursos de educação formal com titulação superior à exigida para ingresso no cargo efetivo (ex: Graduação para cargo de Nível C/D, Especialização, Mestrado, Doutorado), desde que não esteja sendo utilizada para o IQ.',
+    observacoes: 'Não permitido cursos concluídos antes do ingresso no cargo efetivo.',
   },
   {
     code: 'VI.5',
@@ -570,6 +702,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 15.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 5 (15,0 pts por produto)',
+    documentosComprovacao: 'Portaria, projeto ou declaração emitida pelo setor demandante com comprovação do interesse e impacto institucional.',
+    exemplos: 'Implantação ou desenvolvimento de produtos, projetos, processos, metodologias, sistemas, ferramentas institucionais, aplicativos, plataformas digitais, automação de fluxos de trabalho que promovam melhoria na IFE.',
+    observacoes: 'Reconhece a participação relevante que produza resultados efetivos e melhoria para a instituição. Não se aplica a atividades rotineiras.',
   },
   {
     code: 'VI.6',
@@ -579,15 +714,21 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 6 (7,5 pts por grupo)',
+    documentosComprovacao: 'Espelho/certidão do diretório ou sistema oficial; ato ou declaração de liderança/vice-liderança; registro com período e situação do grupo.',
+    exemplos: 'Atuação como líder ou vice-líder em grupos de pesquisa cadastrados no Diretório do CNPq ou grupos institucionais de extensão formalmente reconhecidos.',
+    observacoes: 'Reconhece exclusivamente o exercício da liderança ou vice-liderança. Demais membros pesquisadores entram no Item 7.',
   },
   {
     code: 'VI.7',
     directiveId: 'requisito_6',
-    title: 'Participação como membro de grupo de pesquisa registrado',
+    title: 'Participação como membro em grupo de pesquisa registrado',
     description: 'Pesquisador/membro formalmente cadastrado em grupo de pesquisa.',
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 7 (3,0 pts por projeto)',
+    documentosComprovacao: 'Espelho/certidão do diretório oficial (CNPq ou equivalente); declaração do líder do grupo ou da instituição; relatório identificando a participação.',
+    exemplos: 'Participação na condição de pesquisador, colaborador ou integrante de equipe de grupo de pesquisa cadastrado no CNPq ou sistema equivalente.',
+    observacoes: 'Reconhece a participação como membro de grupo de pesquisa, não abrangendo liderança/vice-liderança (Item 6).',
   },
   {
     code: 'VI.8',
@@ -597,6 +738,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 8 (7,5 pts por projeto)',
+    documentosComprovacao: 'Edital/chamada pública e resultado oficial de aprovação; projeto submetido com identificação da participação; convênio, termo de outorga ou declaração.',
+    exemplos: 'Projetos aprovados em editais de captação de recursos financeiros, materiais ou tecnológicos junto ao CNPq, CAPES, FINEP, EMBRAPII, FAPs estaduais, MEC, MCTI.',
+    observacoes: 'Reconhece a aprovação do projeto que resulte em captação efetiva de recursos para a IFE. Não basta a simples submissão da proposta.',
   },
   {
     code: 'VI.9',
@@ -606,6 +750,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 20.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 9 (20,0 pts por produto)',
+    documentosComprovacao: 'Capa, ficha catalográfica e expediente com ISBN e Conselho Editorial; cópia da publicação.',
+    exemplos: 'Publicação ou organização de livros científicos, técnicos, didáticos ou metodológicos com ISBN e Conselho Editorial por editoras universitárias ou comerciais.',
+    observacoes: 'Aplica-se ao livro completo. Publicação de capítulos enquadra-se no Item 10.',
   },
   {
     code: 'VI.10',
@@ -615,6 +762,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 7.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 10 (7,5 pts por publicação)',
+    documentosComprovacao: 'Texto publicado ou aceite definitivo com autoria; referência bibliográfica, DOI/ISSN/ISBN e expediente.',
+    exemplos: 'Autoria ou coautoria de capítulos de livros, artigos científicos ou técnicos em revistas especializadas e jornais científicos com processo editorial formal.',
+    observacoes: 'Reconhece a autoria/coautoria de capítulos e artigos. Não se aplica à publicação de livro completo (Item 9).',
   },
   {
     code: 'VI.11',
@@ -624,6 +774,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 11 (4,5 pts por produto)',
+    documentosComprovacao: 'Certificado ou declaração emitida pela organização do evento identificando o servidor como apresentador do trabalho.',
+    exemplos: 'Apresentações orais, comunicações coordenadas, pôsteres, painéis, demonstrações tecnológicas ou relatos de experiência em congressos, seminários e simpósios.',
+    observacoes: 'Reconhece a apresentação efetiva de trabalho. Não se aplica à simples participação como ouvinte no evento.',
   },
   {
     code: 'VI.12',
@@ -633,6 +786,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 12 (4,5 pts por produto)',
+    documentosComprovacao: 'Material final com autoria/créditos e data; registro de publicação, aprovação ou disponibilização institucional.',
+    exemplos: 'Cartilhas, manuais, guias, cadernos técnicos, notas técnicas, protocolos, procedimentos operacionais, produtos educacionais do ProfEPT, e-books, materiais didáticos digitais.',
+    observacoes: 'Reconhece a produção de material estruturado voltado à difusão do conhecimento e disponibilizado institucionalmente.',
   },
   {
     code: 'VI.13',
@@ -642,6 +798,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 13 (4,5 pts por projeto)',
+    documentosComprovacao: 'Portaria, convite ou designação como avaliador; parecer ou ficha de avaliação (preservado sigilo); declaração do sistema ou unidade responsável.',
+    exemplos: 'Atuação como avaliador ou parecerista ad hoc em editais de ensino, pesquisa, extensão ou inovação (PIBIC, PIBITI, PIBEX, editais internos/externos).',
+    observacoes: 'Preserva o sigilo do processo avaliativo. Não se aplica à coordenação do projeto ou à avaliação em eventos (Item 7 do Requisito II).',
   },
   {
     code: 'VI.14',
@@ -651,6 +810,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_evento',
     legalRef: 'Anexo VI - Item 14 (3,0 pts por evento)',
+    documentosComprovacao: 'Certificado ou declaração com função; registro institucional do evento e material apresentado.',
+    exemplos: 'Atuação como expositor, facilitador, colaborador ou mediador em oficinas, seminários, jornadas, encontros, semanas acadêmicas, eventos de acolhimento e capacitação.',
+    observacoes: 'Não se confunde com a atuação como instrutor/docente em ação formativa estruturada prevista em PDP (Item 15).',
   },
   {
     code: 'VI.15',
@@ -660,6 +822,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 15 (4,5 pts por curso)',
+    documentosComprovacao: 'Autorização/designação formal; plano ou programa de desenvolvimento de pessoas (PDP) contendo a ação; certificado/declaração e relatório com carga horária e função.',
+    exemplos: 'Instrutor, tutor, palestrante, conteudista ou mentor em cursos, trilhas de aprendizagem, programas de desenvolvimento de pessoas promovidos por escolas de governo (ENAP, EV.G, IFEs).',
+    observacoes: 'Exige ação formativa estruturada prevista em Plano de Desenvolvimento de Pessoas (PDP). Não se aplica à simples participação como cursista.',
   },
   {
     code: 'VI.16',
@@ -669,6 +834,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.5,
     unitType: 'por_evento',
     legalRef: 'Anexo VI - Item 16 (3,5 pts por evento)',
+    documentosComprovacao: 'Portaria, declaração ou ata identificando a coordenação/organização; programação e página oficial do evento.',
+    exemplos: 'Coordenador-geral ou coordenador de comissão organizadora de congressos, simpósios, seminários, jornadas científicas e feiras institucionais.',
+    observacoes: 'Reconhece quem atua na COORDENAÇÃO ou organização do evento. Não abrange a simples participação como membro colaborador salvo se exercer efetivamente a coordenação.',
   },
   {
     code: 'VI.17',
@@ -678,6 +846,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 4.5,
     unitType: 'por_evento',
     legalRef: 'Anexo VI - Item 17 (4,5 pts por evento)',
+    documentosComprovacao: 'Declaração da instituição ou registro acadêmico; ata de defesa ou folha de aprovação com coorientação; trabalho no repositório.',
+    exemplos: 'Coorientação de Trabalhos de Conclusão de Curso (TCC), monografias, dissertações ou teses desenvolvidas em cursos técnicos, graduação ou pós-graduação.',
+    observacoes: 'Reconhece exclusivamente a atuação como COORIENTADOR formal.',
   },
   {
     code: 'VI.18',
@@ -687,6 +858,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 3.0,
     unitType: 'por_item',
     legalRef: 'Anexo VI - Item 18 (3,0 pts por produto)',
+    documentosComprovacao: 'Registro da obra ou documento equivalente; ficha técnica/catálogo e comprovação da vinculação ou repercussão institucional.',
+    exemplos: 'Livros de arte, composições musicais, peças teatrais, roteiros, documentários, filmes, fotografias, pinturas, esculturas, ilustrações, obras audiovisuais com registro e repercussão.',
+    observacoes: 'Reconhece a autoria de obra artística ou cultural registrada com repercussão institucional demonstrada.',
   },
   {
     code: 'VI.19',
@@ -696,6 +870,9 @@ export const STANDARD_CATEGORIES: RSCStandardCategory[] = [
     unitPoints: 1.0,
     unitType: 'por_semestre',
     legalRef: 'Anexo VI - Item 19 (1,0 pt por mês)',
+    documentosComprovacao: 'Portaria, ordem de serviço, escala ou designação; declaração da unidade com função e meses de atuação.',
+    exemplos: 'Atuação em comitês de enfrentamento, campanhas de vacinação, testagem, produção/distribuição de EPIs, fabricação de álcool em gel, protocolos de biossegurança, atendimento assistencial durante a pandemia.',
+    observacoes: 'Considerar como data limite final 08/09/2022 conforme Portaria IFPE nº 978/2022.',
   },
 ];
 

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, RSCLevel, NivelClassificacao, TitulacaoAtual } from '../types';
 import { RSC_REQUIREMENTS } from '../data/rscStructure';
-import { PCCTAE_POSITIONS, PCCTAEPosition } from '../data/pcctaePositions';
-import { User, Award, Building2, Calendar, FileText, ArrowRight, Info, Search, Check, ChevronDown, Briefcase } from 'lucide-react';
+import { PCCTAE_POSITIONS, PCCTAEPosition, getPCCTAEDescription } from '../data/pcctaePositions';
+import { User, Award, Building2, Calendar, FileText, ArrowRight, Info, Search, Check, ChevronDown, Briefcase, Copy, RefreshCw, X } from 'lucide-react';
 import { RscTableReference } from './RscTableReference';
 
 interface ProfileFormProps {
@@ -17,6 +17,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   onNextStep,
 }) => {
   const [showCargoDropdown, setShowCargoDropdown] = useState(false);
+  const [levelFilter, setLevelFilter] = useState<'TODOS' | 'E' | 'D' | 'C' | 'B' | 'A' | 'EBTT'>('TODOS');
+  const [copied, setCopied] = useState(false);
   const cargoDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close cargo dropdown on click outside
@@ -38,10 +40,32 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     });
   };
 
+  const handleFetchDescription = () => {
+    const desc = getPCCTAEDescription(userProfile.cargo, userProfile.nivelClassificacao);
+    onChangeProfile({
+      ...userProfile,
+      observacoes: desc,
+    });
+  };
+
+  const handleCopyDescription = async () => {
+    if (!userProfile.observacoes) return;
+    try {
+      await navigator.clipboard.writeText(userProfile.observacoes);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Erro ao copiar texto:', err);
+    }
+  };
+
   const handleSelectCargo = (pos: PCCTAEPosition) => {
-    const updatedProfile = {
+    const desc = getPCCTAEDescription(pos.name, pos.nivel);
+    const updatedProfile: UserProfile = {
       ...userProfile,
       cargo: pos.name,
+      // Auto-populate description if empty or if user wants default
+      observacoes: userProfile.observacoes.trim() === '' ? desc : userProfile.observacoes,
     };
     // Auto-set nivelClassificacao if it matches E, D, C or EBTT
     if (['E', 'D', 'C', 'EBTT'].includes(pos.nivel)) {
@@ -60,10 +84,21 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
   const selectedReq = RSC_REQUIREMENTS[userProfile.rscAlmejado];
 
-  // Filter positions based on input
-  const filteredPositions = PCCTAE_POSITIONS.filter((pos) =>
-    pos.name.toLowerCase().includes((userProfile.cargo || '').toLowerCase())
-  );
+  // Filter positions based on input and level filter
+  const cargoSearchText = (userProfile.cargo || '').trim().toLowerCase();
+  const isExactSelectedMatch = PCCTAE_POSITIONS.some((p) => p.name.toLowerCase() === cargoSearchText);
+
+  const filteredPositions = PCCTAE_POSITIONS.filter((pos) => {
+    // Level filter check
+    if (levelFilter !== 'TODOS' && pos.nivel !== levelFilter) {
+      return false;
+    }
+    // Search text check
+    if (!cargoSearchText) return true;
+    // If the input currently equals a full exact match and the dropdown is open, show all in that level unless user is actively typing
+    if (isExactSelectedMatch) return true;
+    return pos.name.toLowerCase().includes(cargoSearchText);
+  });
 
   return (
     <div className="space-y-6">
@@ -144,44 +179,88 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   onFocus={() => setShowCargoDropdown(true)}
                   required
                   placeholder="Digite para buscar seu cargo no PCCTAE (ex: Assistente, Analista, Técnico...)"
-                  className="w-full pl-3.5 pr-9 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+                  className="w-full pl-3.5 pr-14 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowCargoDropdown(!showCargoDropdown)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-                  tabIndex={-1}
-                >
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showCargoDropdown ? 'rotate-180' : ''}`} />
-                </button>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                  {userProfile.cargo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChangeProfile({ ...userProfile, cargo: '' });
+                        setShowCargoDropdown(true);
+                      }}
+                      className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                      title="Limpar busca"
+                      tabIndex={-1}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowCargoDropdown(!showCargoDropdown)}
+                    className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showCargoDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
               </div>
 
-              {/* Dropdown de sugestões do PCCTAE */}
+              {/* Dropdown de sugestões do PCCTAE com filtro por nível */}
               {showCargoDropdown && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-slate-100">
-                  <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between sticky top-0 border-b border-slate-200">
-                    <span>Opções Encontradas ({filteredPositions.length})</span>
-                    <span className="text-[9px] font-normal text-slate-400">Clique para selecionar</span>
+                <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-80 overflow-y-auto divide-y divide-slate-100">
+                  {/* Header e Filtros por Nível */}
+                  <div className="p-2 bg-slate-50 sticky top-0 border-b border-slate-200 space-y-1.5 z-10">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span>Base de Cargos PCCTAE ({filteredPositions.length} de {PCCTAE_POSITIONS.length})</span>
+                      <span className="text-[9px] font-normal text-slate-400">Clique para escolher</span>
+                    </div>
+
+                    {/* Level Filter Tabs */}
+                    <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                      {(['TODOS', 'E', 'D', 'C', 'B', 'A', 'EBTT'] as const).map((lvl) => {
+                        const isActive = levelFilter === lvl;
+                        return (
+                          <button
+                            key={lvl}
+                            type="button"
+                            onClick={() => setLevelFilter(lvl)}
+                            className={`px-2 py-0.5 rounded-md font-bold transition cursor-pointer ${
+                              isActive
+                                ? 'bg-[#002d85] text-white shadow-2xs'
+                                : 'bg-slate-200/70 text-slate-700 hover:bg-slate-300'
+                            }`}
+                          >
+                            {lvl === 'TODOS' ? 'Todos' : lvl === 'EBTT' ? 'EBTT' : `Nível ${lvl}`}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {filteredPositions.length === 0 ? (
-                    <div className="p-3 text-xs text-slate-500 text-center">
-                      Nenhum cargo específico com &quot;{userProfile.cargo}&quot;. Você pode manter a descrição personalizada digitada.
+                    <div className="p-4 text-xs text-slate-500 text-center">
+                      Nenhum cargo localizado com &quot;{userProfile.cargo}&quot;{levelFilter !== 'TODOS' ? ` no Nível ${levelFilter}` : ''}.
+                      <br />
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        Você pode manter a descrição personalizada digitada se seu cargo for específico.
+                      </span>
                     </div>
                   ) : (
                     filteredPositions.map((pos) => {
                       const isSelected = userProfile.cargo === pos.name;
                       return (
                         <button
-                          key={pos.name}
+                          key={`${pos.name}-${pos.nivel}`}
                           type="button"
                           onClick={() => handleSelectCargo(pos)}
-                          className={`w-full text-left px-3.5 py-2 text-xs hover:bg-indigo-50 transition flex items-center justify-between group cursor-pointer ${
-                            isSelected ? 'bg-indigo-50/80 font-bold text-indigo-900' : 'text-slate-800'
+                          className={`w-full text-left px-3.5 py-2.5 text-xs hover:bg-indigo-50 transition flex items-center justify-between group cursor-pointer ${
+                            isSelected ? 'bg-indigo-50/90 font-bold text-indigo-900' : 'text-slate-800'
                           }`}
                         >
                           <div className="flex items-center space-x-2 min-w-0 pr-2">
-                            <Briefcase className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                            <Briefcase className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                             <span className="truncate font-medium text-slate-900 group-hover:text-indigo-900">
                               {pos.name}
                             </span>
@@ -191,15 +270,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                             <span
                               className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                                 pos.nivel === 'E'
-                                  ? 'bg-purple-100 text-purple-800'
+                                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                   : pos.nivel === 'D'
-                                  ? 'bg-blue-100 text-blue-800'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
                                   : pos.nivel === 'C'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-amber-100 text-amber-800'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : pos.nivel === 'B' || pos.nivel === 'A'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-rose-100 text-rose-800 border border-rose-200'
                               }`}
                             >
-                              Nível {pos.nivel}
+                              {pos.nivel === 'EBTT' ? 'Docente EBTT' : `Nível ${pos.nivel}`}
                             </span>
                             {isSelected && <Check className="h-3.5 w-3.5 text-indigo-600" />}
                           </div>
@@ -293,19 +374,77 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
             </div>
           </div>
 
-          {/* Observações / Notas */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">
-              Observações ou Particularidades Funcionais
-            </label>
-            <textarea
-              name="observacoes"
-              rows={2}
-              value={userProfile.observacoes}
-              onChange={handleChange}
-              placeholder="Ex: Atuação em projetos de inovação desde 2021; Designação por portaria de chefia no período 2022-2024..."
-              className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-            />
+          {/* Descrição Geral do Cargo PCCTAE / Particularidades Funcionais */}
+          <div className="space-y-2 bg-slate-50/80 border border-slate-200 rounded-xl p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60">
+              <div>
+                <label className="block text-xs font-bold text-[#132247] flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-[#132247]" />
+                  Descrição Geral do Cargo PCCTAE e Atribuições da Função
+                </label>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Busque e carregue a descrição oficial das atribuições do cargo informado ({userProfile.cargo || 'Nenhum cargo informado'}). Você pode copiar ou editar o texto livremente.
+                </p>
+              </div>
+
+              {/* Action Buttons: Search PCCTAE & Copy */}
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleFetchDescription}
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-[#132247] hover:bg-[#1C3366] border border-[#EAA816] rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Buscar e carregar a descrição geral oficial deste cargo no PCCTAE"
+                >
+                  <Search className="h-3.5 w-3.5 text-[#EAA816]" />
+                  <span>Buscar Descrição PCCTAE</span>
+                </button>
+
+                {userProfile.observacoes && (
+                  <button
+                    type="button"
+                    onClick={handleCopyDescription}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                      copied
+                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                    title="Copiar texto para a área de transferência"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-white" />
+                        <span>Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-slate-600" />
+                        <span>Copiar Texto</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="relative pt-1">
+              <textarea
+                name="observacoes"
+                rows={5}
+                value={userProfile.observacoes}
+                onChange={handleChange}
+                placeholder="Clique no botão 'Buscar Descrição PCCTAE' para carregar automaticamente as atribuições oficiais do seu cargo ou digite e edite o texto com suas particularidades funcionais..."
+                className="w-full px-3.5 py-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white leading-relaxed font-sans"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+              <span className="inline-flex items-center gap-1 text-slate-600">
+                💡 <strong>Dica:</strong> Copie ou edite o texto para acrescentar números de portarias de chefia, projetos de extensão e atuações específicas na sua unidade.
+              </span>
+              <span className="font-mono text-slate-400 shrink-0 ml-2">
+                {userProfile.observacoes ? userProfile.observacoes.length : 0} caracteres
+              </span>
+            </div>
           </div>
 
           {/* Legal notice box */}

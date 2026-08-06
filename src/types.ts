@@ -103,6 +103,9 @@ export interface RSCStandardCategory {
   unitType: 'por_hora' | 'por_item' | 'por_ano' | 'por_semestre' | 'por_evento';
   maxScoreCap?: number;
   legalRef: string;
+  documentosComprovacao?: string;
+  exemplos?: string;
+  observacoes?: string;
 }
 
 export interface RSCLevelRequirement {
