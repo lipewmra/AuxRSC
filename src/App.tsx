@@ -46,14 +46,10 @@ export default function App() {
   const [isIntroAnimationOpen, setIsIntroAnimationOpen] = useState(false);
   const [exportImportModalMode, setExportImportModalMode] = useState<'export' | 'import' | null>(null);
 
-  // Helper to verify if API key exists before triggering AI operations
-  const ensureApiKey = (reason: string): boolean => {
-    const key = getStoredGeminiApiKey();
-    if (!key || !key.trim()) {
-      setApiKeyModalReason(reason);
-      setIsApiKeyModalOpen(true);
-      return false;
-    }
+  // Helper to verify if API key exists before triggering AI operations (soft check, lets server try process.env first)
+  const ensureApiKey = (_reason: string): boolean => {
+    // Proceed to allow server process.env.GEMINI_API_KEY to work.
+    // If server lacks key, backend will return error and open modal automatically.
     return true;
   };
 
@@ -131,7 +127,24 @@ export default function App() {
 
         if (!response.ok) {
           const errJson = await response.json().catch(() => ({}));
-          throw new Error(errJson.error || 'Erro na resposta do servidor.');
+          const errorMsg =
+            errJson.error ||
+            (response.status === 413
+              ? 'O arquivo PDF é muito grande para o Vercel (máximo ~3.5MB por envio em base64).'
+              : `Erro na resposta do servidor (HTTP ${response.status}).`);
+
+          if (
+            errorMsg.includes('Chave de API') ||
+            errorMsg.includes('API_KEY') ||
+            errorMsg.includes('apiKey') ||
+            response.status === 401
+          ) {
+            setApiKeyModalReason(
+              'A chave de API do Gemini não foi encontrada no servidor Vercel. Por favor, cadastre sua chave própria no botão "API Key" no topo do sistema.'
+            );
+            setIsApiKeyModalOpen(true);
+          }
+          throw new Error(errorMsg);
         }
 
         const data = await response.json();

@@ -125,6 +125,15 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
             </span>
           </div>
 
+          {documents.some((d) => d.fileSize > 3.5 * 1024 * 1024) && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Atenção para Vercel:</span> Você possui arquivo(s) com mais de 3.5MB. Na hospedagem Vercel, payloads de requisições têm limite de upload (~4MB). Se ocorrer falha na análise, recomendamos dividir o PDF ou comprimi-lo antes do envio.
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {documents.map((doc) => (
               <div

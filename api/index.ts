@@ -3,8 +3,20 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 export const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-gemini-api-key');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+const router = express.Router();
 
 // Helper to get Gemini Client with priority to user header key over process.env
 function getGeminiClient(req?: express.Request): GoogleGenAI {
@@ -75,12 +87,12 @@ async function callGeminiWithFallback(
 }
 
 // API Health Check
-app.get('/api/health', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Endpoint: Analyze PDF document for RSC Calculator mapping
-app.post('/api/analyze-pdf', async (req, res) => {
+router.post('/analyze-pdf', async (req, res) => {
   try {
     const { base64Data, fileName, fileType, userProfile } = req.body;
 
@@ -285,7 +297,7 @@ Para cada documento, preencha obrigatoriamente:
 });
 
 // Endpoint: Generate Demonstration of Knowledge and Competencies Text
-app.post('/api/generate-memorial-demonstracao', async (req, res) => {
+router.post('/generate-memorial-demonstracao', async (req, res) => {
   try {
     const { userProfile, trajetoriaData, rscSummary } = req.body;
 
@@ -372,7 +384,7 @@ Retorne em formato JSON com o campo "demonstracaoTexto" contendo o texto complet
 });
 
 // Endpoint: Generate / Refine Justification Text
-app.post('/api/generate-justification', async (req, res) => {
+router.post('/generate-justification', async (req, res) => {
   try {
     const { item, userProfile } = req.body;
 
@@ -438,6 +450,8 @@ Retorne os seguintes campos em JSON:
       userMsg = 'Limite de cota/requisições da API Gemini atingido (Erro 429). Por favor, aguarde alguns segundos e tente novamente.';
     } else if (errString.includes('503') || errString.includes('UNAVAILABLE') || errString.includes('high demand')) {
       userMsg = 'Os servidores do Gemini estão com alta demanda temporária (Erro 503). Tente novamente em instantes.';
+    } else if (errString.includes('Chave de API') || errString.includes('API_KEY') || errString.includes('apiKey') || errString.includes('API key')) {
+      userMsg = 'Chave de API do Gemini não encontrada ou não configurada no Vercel. Por favor, insira sua chave própria no botão "API Key" no topo do app ou configure GEMINI_API_KEY no Vercel.';
     }
 
     return res.status(500).json({
@@ -446,5 +460,8 @@ Retorne os seguintes campos em JSON:
     });
   }
 });
+
+app.use('/api', router);
+app.use('/', router);
 
 export default app;
