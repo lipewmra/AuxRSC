@@ -110,6 +110,9 @@ export default function App() {
     const newExtractedItems: RSCItem[] = [];
 
     for (let i = 0; i < docsToAnalyze.length; i++) {
+      if (i > 0) {
+        await new Promise((res) => setTimeout(res, 1000));
+      }
       const doc = docsToAnalyze[i];
       setCurrentFileAnalyzing(doc.fileName);
       setStatusMessage(`Analisando e extraindo comprovante ${i + 1} de ${docsToAnalyze.length}...`);
@@ -176,6 +179,7 @@ export default function App() {
             experienciaProfissionalTexto: item.experienciaProfissionalTexto || '',
             diferencialAtuacaoTexto: item.diferencialAtuacaoTexto || '',
             impactosSaberesTexto: item.impactosSaberesTexto || '',
+            trechoComprobatorioExato: item.trecho_comprobatorio_exato || item.trechoComprobatorioExato || '',
           });
         });
 
@@ -185,6 +189,10 @@ export default function App() {
           updatedDocs[docIdx] = {
             ...updatedDocs[docIdx],
             analyzed: true,
+            documentoValido: data.documento_valido,
+            tipoDocumento: data.tipo_documento,
+            confiancaOcr: data.confianca_ocr,
+            motivoRejeicao: data.motivo_rejeicao,
             detectedItemsCount: extracted.length,
           };
         }
@@ -337,6 +345,7 @@ export default function App() {
         {activeStep === 4 && (
           <RscCalculatorOrganizer
             rscItems={rscItems}
+            documents={documents}
             userProfile={userProfile}
             onUpdateItem={handleUpdateItem}
             onDeleteItem={handleDeleteItem}
@@ -372,8 +381,11 @@ export default function App() {
             style={{ width: '100px', height: '100px', borderWidth: '0px' }}
             referrerPolicy="no-referrer"
           />
-          <p className="font-semibold text-slate-800">
-            Auxiliador de Preenchimento do RSC-TAE • Sistema de Suporte à Calculadora RSC (PCCTAE/EBTT)
+          <p className="font-semibold text-slate-800 flex items-center justify-center gap-2 flex-wrap">
+            <span>Auxiliador de Preenchimento do RSC-TAE • Sistema de Suporte à Calculadora RSC (PCCTAE/EBTT)</span>
+            <span className="bg-[#132247] text-[#FEF0B2] border border-[#EAA816] text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
+              v2.0
+            </span>
           </p>
           <div className="text-[11px] text-slate-500 flex flex-col items-center justify-center gap-1.5">
             <span className="font-semibold text-slate-700">Desenvolvido por / Créditos de criação:</span>

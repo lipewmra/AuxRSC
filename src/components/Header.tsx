@@ -53,9 +53,12 @@ export const Header: React.FC<HeaderProps> = ({
               referrerPolicy="no-referrer"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center space-x-1.5">
-                <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-tight text-[#132247] leading-tight break-words">
+              <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-tight text-[#132247] leading-tight break-words flex items-center gap-2">
                   Auxiliador de Preenchimento do <span className="text-[#C28600] font-extrabold">RSC-TAE</span>
+                  <span className="bg-[#132247] text-[#FEF0B2] text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full border border-[#EAA816] shadow-2xs shrink-0">
+                    v2.0
+                  </span>
                 </h1>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-600 truncate sm:whitespace-normal">

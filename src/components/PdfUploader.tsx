@@ -143,14 +143,21 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
                       <span>{formatFileSize(doc.fileSize)}</span>
                       <span>•</span>
                       {doc.analyzed ? (
-                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Analisado ({doc.detectedItemsCount} item)
-                        </span>
+                        doc.documentoValido === false ? (
+                          <span className="text-rose-600 font-semibold flex items-center gap-1" title={doc.motivoRejeicao || 'Documento rejeitado'}>
+                            <AlertCircle className="h-3 w-3 text-rose-600" />
+                            REJEITADO (Inválido/Ilegível)
+                          </span>
+                        ) : (
+                          <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Válido ({doc.detectedItemsCount} item{doc.detectedItemsCount !== 1 ? 's' : ''})
+                          </span>
+                        )
                       ) : doc.analysisError ? (
-                        <span className="text-rose-600 font-semibold flex items-center gap-1">
+                        <span className="text-rose-600 font-semibold flex items-center gap-1" title={doc.analysisError}>
                           <AlertCircle className="h-3 w-3" />
-                          Erro na Análise
+                          {doc.analysisError.length > 40 ? doc.analysisError.substring(0, 40) + '...' : doc.analysisError}
                         </span>
                       ) : (
                         <span className="text-amber-600 font-medium">Pendente de Análise</span>

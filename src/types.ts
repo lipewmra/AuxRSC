@@ -71,6 +71,7 @@ export interface RSCItem {
   experienciaProfissionalTexto?: string; // (A: max 1500 chars)
   diferencialAtuacaoTexto?: string;      // (B: max 600 chars)
   impactosSaberesTexto?: string;         // (C: max 600 chars)
+  trechoComprobatorioExato?: string;     // Grounding Rígido (citação literal)
 }
 
 export interface UploadedDocument {
@@ -80,6 +81,10 @@ export interface UploadedDocument {
   fileType: string;
   base64Data?: string;
   analyzed: boolean;
+  documentoValido?: boolean;
+  tipoDocumento?: string;
+  confiancaOcr?: string;
+  motivoRejeicao?: string;
   analysisError?: string;
   analyzedAt?: string;
   detectedItemsCount: number;

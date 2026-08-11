@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RSCItem, UserProfile, RSCDirectiveId } from '../types';
+import { RSCItem, UserProfile, RSCDirectiveId, UploadedDocument } from '../types';
 import { DIRECTIVE_NAMES, STANDARD_CATEGORIES, RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
 import {
   LayoutGrid,
@@ -10,15 +10,18 @@ import {
   Trash2,
   FileText,
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
   ExternalLink,
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Quote,
 } from 'lucide-react';
 
 interface RscCalculatorOrganizerProps {
   rscItems: RSCItem[];
+  documents?: UploadedDocument[];
   userProfile: UserProfile;
   onUpdateItem: (item: RSCItem) => void;
   onDeleteItem: (itemId: string) => void;
@@ -29,6 +32,7 @@ interface RscCalculatorOrganizerProps {
 
 export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
   rscItems,
+  documents = [],
   userProfile,
   onUpdateItem,
   onDeleteItem,
@@ -278,6 +282,72 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Rejected / Invalidated Documents Section */}
+      {(() => {
+        const rejectedDocs = (documents || []).filter(
+          (doc) => doc.analyzed && (doc.documentoValido === false || doc.analysisError)
+        );
+        if (rejectedDocs.length === 0) return null;
+        return (
+          <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-5 shadow-xs space-y-3">
+            <div className="flex items-start justify-between gap-3 border-b border-rose-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    Documentos Invalidados / Rejeitados na Triagem ({rejectedDocs.length})
+                    <span className="bg-rose-600 text-white text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full">
+                      Bloqueado na Fase 1 (Gatekeeper)
+                    </span>
+                  </h3>
+                  <p className="text-xs text-rose-800 mt-0.5">
+                    Os seguintes arquivos foram invalidados na verificação de autenticidade/legibilidade e não pontuam na Calculadora RSC:
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {rejectedDocs.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white border-2 border-rose-200 rounded-xl p-4 shadow-xs space-y-2.5 relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-rose-600 shrink-0" />
+                      <span className="font-bold text-xs text-slate-900 truncate" title={doc.fileName}>
+                        {doc.fileName}
+                      </span>
+                    </div>
+                    <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md shrink-0">
+                      REJEITADO
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                    <span>Tipo: <strong className="text-slate-800 font-semibold">{doc.tipoDocumento || 'Inválido'}</strong></span>
+                    <span>•</span>
+                    <span>OCR: <strong className="text-slate-800 font-semibold">{doc.confiancaOcr || 'Baixa'}</strong></span>
+                  </div>
+
+                  <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-900 space-y-1">
+                    <span className="font-bold text-rose-950 text-[11px] uppercase tracking-wider block flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5 text-rose-600" /> Motivo do Não Aceite / Rejeição:
+                    </span>
+                    <p className="text-xs font-medium leading-relaxed text-rose-900">
+                      {doc.motivoRejeicao || doc.analysisError || 'Documento sem timbre, ilegível ou sem valor probatório oficial com assinatura/autenticação.'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tabs & Controls */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -735,6 +805,29 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                         </div>
                       </div>
                     </div>
+
+                    {/* Trecho Comprobatório Exato (Grounding Rígido) */}
+                    {item.trechoComprobatorioExato && (
+                      <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-amber-950 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                            <Quote className="h-3.5 w-3.5 text-amber-600" />
+                            Trecho Comprobatório Exato (Citação Direta do Documento)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyFieldText(item.trechoComprobatorioExato || '', item.id + '_trecho')}
+                            className="px-2 py-0.5 text-[10px] font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded transition flex items-center gap-1 shrink-0 cursor-pointer"
+                          >
+                            {copiedFieldKey === item.id + '_trecho' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                            <span>{copiedFieldKey === item.id + '_trecho' ? 'Copiado!' : 'Copiar Citação'}</span>
+                          </button>
+                        </div>
+                        <p className="font-mono text-slate-800 text-[11px] bg-white p-2.5 rounded-lg border border-amber-200/60 leading-relaxed italic">
+                          "{item.trechoComprobatorioExato}"
+                        </p>
+                      </div>
+                    )}
 
                     {/* Justificativa Fundamentada Geral */}
                     <div className="space-y-1.5">
