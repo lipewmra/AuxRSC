@@ -46,40 +46,55 @@ async function callGeminiWithFallback(
   }
 ) {
   const models = ['gemini-3.6-flash', 'gemini-flash-latest'];
+  const maxRetriesPerModel = 3;
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: params.contents,
-        config: params.config,
-      });
-      return response;
-    } catch (err: any) {
-      lastError = err;
-      const errString = String(err?.message || err);
-      const isTransientError =
-        errString.includes('429') ||
-        errString.includes('503') ||
-        errString.includes('RESOURCE_EXHAUSTED') ||
-        errString.includes('UNAVAILABLE') ||
-        errString.includes('high demand') ||
-        errString.includes('Quota exceeded') ||
-        errString.includes('rate limit');
+    for (let attempt = 0; attempt < maxRetriesPerModel; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: params.contents,
+          config: params.config,
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errString = String(err?.message || err);
+        const isTransientError =
+          errString.includes('429') ||
+          errString.includes('503') ||
+          errString.includes('RESOURCE_EXHAUSTED') ||
+          errString.includes('UNAVAILABLE') ||
+          errString.includes('high demand') ||
+          errString.includes('Quota exceeded') ||
+          errString.includes('rate limit');
 
-      console.warn(`[Gemini API] Tentativa com modelo ${model} falhou (${i + 1}/${models.length}):`, errString);
+        console.warn(
+          `[Gemini API] Modelo ${model} (tentativa ${attempt + 1}/${maxRetriesPerModel}) falhou:`,
+          errString
+        );
 
-      if (isTransientError && i < models.length - 1) {
-        // Pausa de 2 segundos antes de tentar o próximo modelo da cadeia de fallback
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        continue;
+        if (isTransientError) {
+          if (attempt < maxRetriesPerModel - 1) {
+            // Exponential backoff: ~3s on 1st retry, ~6s on 2nd retry
+            const backoffMs = Math.pow(2, attempt) * 3000 + Math.floor(Math.random() * 1000);
+            console.log(
+              `[Gemini API] Aguardando ${Math.round(backoffMs / 1000)}s antes de tentar novamente devido a cota/demanda...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+            continue;
+          }
+        } else {
+          // Non-transient error: stop retrying this model
+          break;
+        }
       }
-
-      if (!isTransientError) {
-        throw err;
-      }
+    }
+    // Pause briefly before switching to fallback model if transient error persisted
+    if (i < models.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 

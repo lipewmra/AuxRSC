@@ -107,116 +107,154 @@ export default function App() {
 
     for (let i = 0; i < docsToAnalyze.length; i++) {
       if (i > 0) {
-        await new Promise((res) => setTimeout(res, 1000));
+        // Pausa de 2.5s entre documentos para respeitar limites de requisição por minuto (RPM)
+        await new Promise((res) => setTimeout(res, 2500));
       }
       const doc = docsToAnalyze[i];
       setCurrentFileAnalyzing(doc.fileName);
-      setStatusMessage(`Analisando e extraindo comprovante ${i + 1} de ${docsToAnalyze.length}...`);
 
-      try {
-        const response = await fetch('/api/analyze-pdf', {
-          method: 'POST',
-          headers: getApiHeaders(),
-          body: JSON.stringify({
-            base64Data: doc.base64Data,
-            fileName: doc.fileName,
-            fileType: doc.fileType,
-            userProfile,
-          }),
-        });
+      let success = false;
+      let retries = 0;
+      const maxRetries = 3;
 
-        if (!response.ok) {
-          const errJson = await response.json().catch(() => ({}));
-          const errorMsg =
-            errJson.error ||
-            (response.status === 413
-              ? 'O arquivo PDF é muito grande para o Vercel (máximo ~3.5MB por envio em base64).'
-              : `Erro na resposta do servidor (HTTP ${response.status}).`);
-
-          if (
-            errorMsg.includes('Chave de API') ||
-            errorMsg.includes('API_KEY') ||
-            errorMsg.includes('apiKey') ||
-            response.status === 401
-          ) {
-            setApiKeyModalReason(
-              'A chave de API do Gemini não foi encontrada no servidor Vercel. Por favor, cadastre sua chave própria no botão "API Key" no topo do sistema.'
+      while (!success && retries < maxRetries) {
+        try {
+          if (retries > 0) {
+            const retryWaitSeconds = retries * 5;
+            setStatusMessage(
+              `Aguardando cota do Gemini para "${doc.fileName}"... Reenviando em ${retryWaitSeconds}s (Tentativa ${retries + 1}/${maxRetries})`
             );
-            setIsApiKeyModalOpen(true);
+            await new Promise((res) => setTimeout(res, retryWaitSeconds * 1000));
+          } else {
+            setStatusMessage(`Analisando e extraindo comprovante ${i + 1} de ${docsToAnalyze.length}: "${doc.fileName}"...`);
           }
-          throw new Error(errorMsg);
-        }
 
-        const data = await response.json();
-        const extracted = data.items || [];
-
-        // Convert extracted items to RSCItem and cross-reference with STANDARD_CATEGORIES
-        extracted.forEach((item: any) => {
-          const matchedCategory = STANDARD_CATEGORIES.find(
-            (c) => c.code?.trim().toUpperCase() === item.categoryCode?.trim().toUpperCase()
-          );
-
-          const finalCategoryCode = matchedCategory ? matchedCategory.code : (item.categoryCode || 'I.1');
-          const finalDirectiveId = matchedCategory ? matchedCategory.directiveId : (item.directiveId || 'requisito_1');
-          const finalCategoryName = matchedCategory ? matchedCategory.title : (item.categoryName || 'Categoria RSC');
-          const finalUnitPoints = matchedCategory ? matchedCategory.unitPoints : (item.unitPoints || 1.0);
-          const finalQuantity = item.quantity && item.quantity > 0 ? item.quantity : 1;
-          const calculatedTotalScore = finalUnitPoints * finalQuantity;
-
-          newExtractedItems.push({
-            id: 'item_' + Math.random().toString(36).substr(2, 9),
-            documentId: doc.id,
-            documentName: doc.fileName,
-            title: item.title || `Item de ${doc.fileName}`,
-            issuer: item.orgaoEmissor || item.issuer || 'Emissor não identificado',
-            startDate: item.startDate,
-            endDate: item.endDate,
-            workloadHours: item.workloadHours,
-            directiveId: finalDirectiveId,
-            categoryCode: finalCategoryCode,
-            categoryName: finalCategoryName,
-            unitPoints: finalUnitPoints,
-            quantity: finalQuantity,
-            totalScore: calculatedTotalScore,
-            justificationText: item.justificationText || '',
-            regulatoryBasis: matchedCategory?.legalRef || item.regulatoryBasis || 'Lei 15.367/2026 / Tabela RSC',
-            complianceStatus: item.complianceStatus || 'valid',
-            complianceNotes: item.complianceNotes || [],
-
-            // Campos detalhados conforme diretrizes do RSC-PCCTAE
-            periodoVigencia: item.periodoVigencia || (item.startDate ? `${item.startDate} ${item.endDate ? `a ${item.endDate}` : ''}` : 'Não especificado no PDF'),
-            finalidadeDocumento: item.finalidadeDocumento || 'Comprovação das atividades para pontuação no RSC',
-            orgaoEmissor: item.orgaoEmissor || item.issuer || 'Órgão Emissor',
-            numeroIdentificacaoSei: item.numeroIdentificacaoSei || 'Documento Anexo',
-            dataDocumento: item.dataDocumento || item.endDate || item.startDate || 'Não especificada',
-            experienciaProfissionalTexto: item.experienciaProfissionalTexto || '',
-            diferencialAtuacaoTexto: item.diferencialAtuacaoTexto || '',
-            impactosSaberesTexto: item.impactosSaberesTexto || '',
-            trechoComprobatorioExato: item.trecho_comprobatorio_exato || item.trechoComprobatorioExato || '',
+          const response = await fetch('/api/analyze-pdf', {
+            method: 'POST',
+            headers: getApiHeaders(),
+            body: JSON.stringify({
+              base64Data: doc.base64Data,
+              fileName: doc.fileName,
+              fileType: doc.fileType,
+              userProfile,
+            }),
           });
-        });
 
-        // Mark doc as analyzed
-        const docIdx = updatedDocs.findIndex((d) => d.id === doc.id);
-        if (docIdx !== -1) {
-          updatedDocs[docIdx] = {
-            ...updatedDocs[docIdx],
-            analyzed: true,
-            documentoValido: data.documento_valido,
-            tipoDocumento: data.tipo_documento,
-            confiancaOcr: data.confianca_ocr,
-            motivoRejeicao: data.motivo_rejeicao,
-            detectedItemsCount: extracted.length,
-          };
-        }
-      } catch (err: any) {
-        console.error(`Erro ao analisar ${doc.fileName}:`, err);
-        const docIdx = updatedDocs.findIndex((d) => d.id === doc.id);
-        if (docIdx !== -1) {
-          updatedDocs[docIdx] = {
-            ...updatedDocs[docIdx],
-            analysisError: err.message || 'Erro de leitura',
-          };
+          if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            const errorMsg =
+              errJson.error ||
+              (response.status === 413
+                ? 'O arquivo PDF é muito grande para o Vercel (máximo ~3.5MB por envio em base64).'
+                : `Erro na resposta do servidor (HTTP ${response.status}).`);
+
+            if (
+              errorMsg.includes('Chave de API') ||
+              errorMsg.includes('API_KEY') ||
+              errorMsg.includes('apiKey') ||
+              response.status === 401
+            ) {
+              setApiKeyModalReason(
+                'A chave de API do Gemini não foi encontrada no servidor Vercel. Por favor, cadastre sua chave própria no botão "API Key" no topo do sistema.'
+              );
+              setIsApiKeyModalOpen(true);
+            }
+
+            const isQuotaError =
+              errorMsg.includes('429') ||
+              errorMsg.includes('RESOURCE_EXHAUSTED') ||
+              errorMsg.includes('Quota exceeded') ||
+              errorMsg.includes('503') ||
+              response.status === 429 ||
+              response.status === 503;
+
+            if (isQuotaError && retries < maxRetries - 1) {
+              retries++;
+              continue;
+            }
+
+            throw new Error(errorMsg);
+          }
+
+          const data = await response.json();
+          const extracted = data.items || [];
+
+          // Convert extracted items to RSCItem and cross-reference with STANDARD_CATEGORIES
+          extracted.forEach((item: any) => {
+            const matchedCategory = STANDARD_CATEGORIES.find(
+              (c) => c.code?.trim().toUpperCase() === item.categoryCode?.trim().toUpperCase()
+            );
+
+            const finalCategoryCode = matchedCategory ? matchedCategory.code : (item.categoryCode || 'I.1');
+            const finalDirectiveId = matchedCategory ? matchedCategory.directiveId : (item.directiveId || 'requisito_1');
+            const finalCategoryName = matchedCategory ? matchedCategory.title : (item.categoryName || 'Categoria RSC');
+            const finalUnitPoints = matchedCategory ? matchedCategory.unitPoints : (item.unitPoints || 1.0);
+            const finalQuantity = item.quantity && item.quantity > 0 ? item.quantity : 1;
+            const calculatedTotalScore = finalUnitPoints * finalQuantity;
+
+            newExtractedItems.push({
+              id: 'item_' + Math.random().toString(36).substr(2, 9),
+              documentId: doc.id,
+              documentName: doc.fileName,
+              title: item.title || `Item de ${doc.fileName}`,
+              issuer: item.orgaoEmissor || item.issuer || 'Emissor não identificado',
+              startDate: item.startDate,
+              endDate: item.endDate,
+              workloadHours: item.workloadHours,
+              directiveId: finalDirectiveId,
+              categoryCode: finalCategoryCode,
+              categoryName: finalCategoryName,
+              unitPoints: finalUnitPoints,
+              quantity: finalQuantity,
+              totalScore: calculatedTotalScore,
+              justificationText: item.justificationText || '',
+              regulatoryBasis: matchedCategory?.legalRef || item.regulatoryBasis || 'Lei 15.367/2026 / Tabela RSC',
+              complianceStatus: item.complianceStatus || 'valid',
+              complianceNotes: item.complianceNotes || [],
+
+              // Campos detalhados conforme diretrizes do RSC-PCCTAE
+              periodoVigencia: item.periodoVigencia || (item.startDate ? `${item.startDate} ${item.endDate ? `a ${item.endDate}` : ''}` : 'Não especificado no PDF'),
+              finalidadeDocumento: item.finalidadeDocumento || 'Comprovação das atividades para pontuação no RSC',
+              orgaoEmissor: item.orgaoEmissor || item.issuer || 'Órgão Emissor',
+              numeroIdentificacaoSei: item.numeroIdentificacaoSei || 'Documento Anexo',
+              dataDocumento: item.dataDocumento || item.endDate || item.startDate || 'Não especificada',
+              experienciaProfissionalTexto: item.experienciaProfissionalTexto || '',
+              diferencialAtuacaoTexto: item.diferencialAtuacaoTexto || '',
+              impactosSaberesTexto: item.impactosSaberesTexto || '',
+              trechoComprobatorioExato: item.trecho_comprobatorio_exato || item.trechoComprobatorioExato || '',
+            });
+          });
+
+          // Mark doc as analyzed
+          const docIdx = updatedDocs.findIndex((d) => d.id === doc.id);
+          if (docIdx !== -1) {
+            updatedDocs[docIdx] = {
+              ...updatedDocs[docIdx],
+              analyzed: true,
+              documentoValido: data.documento_valido,
+              tipoDocumento: data.tipo_documento,
+              confiancaOcr: data.confianca_ocr,
+              motivoRejeicao: data.motivo_rejeicao,
+              detectedItemsCount: extracted.length,
+              analysisError: undefined,
+            };
+          }
+          success = true;
+        } catch (err: any) {
+          if (retries < maxRetries - 1 && (err.message.includes('429') || err.message.includes('503') || err.message.includes('Quota exceeded'))) {
+            retries++;
+            continue;
+          }
+
+          console.error(`Erro ao analisar ${doc.fileName}:`, err);
+          const docIdx = updatedDocs.findIndex((d) => d.id === doc.id);
+          if (docIdx !== -1) {
+            updatedDocs[docIdx] = {
+              ...updatedDocs[docIdx],
+              analysisError: err.message || 'Erro de leitura',
+            };
+          }
+          break;
         }
       }
 

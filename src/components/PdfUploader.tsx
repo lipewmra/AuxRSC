@@ -135,15 +135,31 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
           )}
 
           {documents.some((d) => d.analysisError) && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2.5">
-              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-bold text-rose-900 block">Falha detectada na análise de documento(s):</span>
-                {documents.filter((d) => d.analysisError).map((d) => (
-                  <div key={d.id} className="text-rose-700">
-                    <strong className="font-semibold">{d.fileName}:</strong> {d.analysisError}
-                  </div>
-                ))}
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="space-y-1 flex-1">
+                  <span className="font-bold text-rose-900 block">Falha detectada na análise de documento(s):</span>
+                  {documents.filter((d) => d.analysisError).map((d) => (
+                    <div key={d.id} className="text-rose-700">
+                      <strong className="font-semibold">{d.fileName}:</strong> {d.analysisError}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-rose-200/80 flex items-center justify-between gap-3">
+                <p className="text-[11px] text-rose-700">
+                  O sistema agora possui fila cadenciada. Clique para tentar reanalisar apenas os arquivos pendentes:
+                </p>
+                <button
+                  onClick={onStartAnalysis}
+                  disabled={isAnalyzing}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shrink-0 transition flex items-center gap-1.5 shadow-2xs"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Reanalisar Arquivos Pendentes
+                </button>
               </div>
             </div>
           )}
