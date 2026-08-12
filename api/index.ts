@@ -45,7 +45,7 @@ async function callGeminiWithFallback(
     config?: any;
   }
 ) {
-  const models = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+  const models = ['gemini-3.6-flash', 'gemini-flash-latest'];
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
@@ -240,19 +240,6 @@ Para cada documento, preencha obrigatoriamente:
                   'unitPoints',
                   'quantity',
                   'totalScore',
-                  'trecho_comprobatorio_exato',
-                  'justificationText',
-                  'regulatoryBasis',
-                  'complianceStatus',
-                  'complianceNotes',
-                  'periodoVigencia',
-                  'finalidadeDocumento',
-                  'orgaoEmissor',
-                  'numeroIdentificacaoSei',
-                  'dataDocumento',
-                  'experienciaProfissionalTexto',
-                  'diferencialAtuacaoTexto',
-                  'impactosSaberesTexto',
                 ],
               },
             },
@@ -283,10 +270,14 @@ Para cada documento, preencha obrigatoriamente:
     const errString = String(error?.message || error);
     let userMsg = 'Falha ao analisar o documento PDF com a IA Gemini.';
 
-    if (errString.includes('429') || errString.includes('RESOURCE_EXHAUSTED') || errString.includes('Quota exceeded')) {
+    if (errString.includes('Chave de API') || errString.includes('API_KEY') || errString.includes('apiKey') || errString.includes('API key')) {
+      userMsg = 'Chave de API do Gemini não encontrada ou não configurada. Por favor, insira sua chave própria no botão "API Key" no topo do app ou configure GEMINI_API_KEY no servidor.';
+    } else if (errString.includes('429') || errString.includes('RESOURCE_EXHAUSTED') || errString.includes('Quota exceeded')) {
       userMsg = 'Limite de cota/requisições da API Gemini atingido (Erro 429). Aguarde alguns segundos e tente novamente ou insira sua chave própria de API Gemini no topo da página.';
     } else if (errString.includes('503') || errString.includes('UNAVAILABLE') || errString.includes('high demand')) {
       userMsg = 'Os servidores do Gemini estão com alta demanda temporária (Erro 503). Por favor, aguarde alguns segundos e tente reanalisar.';
+    } else if (error?.message) {
+      userMsg = `Falha ao analisar o documento PDF com a IA Gemini: ${error.message}`;
     }
 
     return res.status(500).json({

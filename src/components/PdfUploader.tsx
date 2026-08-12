@@ -134,6 +134,20 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
             </div>
           )}
 
+          {documents.some((d) => d.analysisError) && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2.5">
+              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-bold text-rose-900 block">Falha detectada na análise de documento(s):</span>
+                {documents.filter((d) => d.analysisError).map((d) => (
+                  <div key={d.id} className="text-rose-700">
+                    <strong className="font-semibold">{d.fileName}:</strong> {d.analysisError}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {documents.map((doc) => (
               <div
