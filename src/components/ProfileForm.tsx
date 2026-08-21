@@ -313,6 +313,53 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               </select>
             </div>
 
+            {/* Data de Ingresso no Serviço Público (Crucial para validação de documentos) */}
+            <div className="space-y-1.5 md:col-span-1 bg-amber-50/50 p-3 rounded-xl border border-amber-200/80">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-amber-700" />
+                  <span>Data de Ingresso no Serviço Público</span>
+                  <span className="text-rose-600 font-extrabold">*</span>
+                </label>
+              </div>
+              <input
+                type="date"
+                name="dataIngressoServicoPublico"
+                value={userProfile.dataIngressoServicoPublico || userProfile.dataExercicio || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onChangeProfile({
+                    ...userProfile,
+                    dataIngressoServicoPublico: val,
+                    dataExercicio: val,
+                  });
+                }}
+                required
+                className="w-full px-3 py-2 text-xs border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white font-medium text-slate-800"
+              />
+              <p className="text-[11px] text-amber-800 leading-tight">
+                <strong>Cruzamento de Validação:</strong> Documentos com data anterior a este ingresso não serão computados para a pontuação do RSC.
+              </p>
+            </div>
+
+            {/* Data do Requerimento do RSC */}
+            <div className="space-y-1.5 md:col-span-1">
+              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                <span>Data do Requerimento</span>
+              </label>
+              <input
+                type="date"
+                name="dataRequerimento"
+                value={userProfile.dataRequerimento || ''}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-800"
+              />
+              <p className="text-[10px] text-slate-500">
+                Data de formalização do processo de RSC no SEI.
+              </p>
+            </div>
+
             {/* Matrícula SIAPE */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">Matrícula SIAPE</label>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RSCItem, UserProfile, RSCDirectiveId, UploadedDocument } from '../types';
 import { DIRECTIVE_NAMES, STANDARD_CATEGORIES, RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
+import { checkDocumentPriorToEntryDate, getItemEffectiveDate, formatDateDisplay } from '../utils/dateValidation';
 import {
   LayoutGrid,
   Plus,
@@ -17,6 +18,8 @@ import {
   ChevronUp,
   RefreshCw,
   Quote,
+  Calendar,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface RscCalculatorOrganizerProps {
@@ -119,10 +122,20 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
     setTimeout(() => setCopiedJustificationId(null), 2000);
   };
 
+  const entryDate = userProfile.dataIngressoServicoPublico || userProfile.dataExercicio;
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditingItem) {
-      onUpdateItem(isEditingItem);
+      const effectiveDate = getItemEffectiveDate(isEditingItem);
+      const dateCheck = checkDocumentPriorToEntryDate(effectiveDate, entryDate);
+      const updatedItem: RSCItem = {
+        ...isEditingItem,
+        isPriorToPublicService: dateCheck.isPrior,
+        dateValidationReason: dateCheck.reason,
+        effectiveDocumentDate: effectiveDate,
+      };
+      onUpdateItem(updatedItem);
       setIsEditingItem(null);
     }
   };
@@ -131,12 +144,24 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
     e.preventDefault();
     if (!newItem.title || !newItem.issuer) return;
 
+    const tempItem: Partial<RSCItem> = {
+      ...newItem,
+      effectiveDocumentDate: getItemEffectiveDate(newItem as RSCItem),
+    };
+    const effectiveDate = getItemEffectiveDate(tempItem as RSCItem);
+    const dateCheck = checkDocumentPriorToEntryDate(effectiveDate, entryDate);
+
     const itemToAdd: RSCItem = {
       id: 'item_' + Math.random().toString(36).substr(2, 9),
       title: newItem.title || 'Nova Atividade',
       issuer: newItem.issuer || 'UFCG',
       startDate: newItem.startDate,
       endDate: newItem.endDate,
+      dataDocumento: newItem.dataDocumento,
+      periodoVigencia: newItem.periodoVigencia,
+      numeroIdentificacaoSei: newItem.numeroIdentificacaoSei,
+      orgaoEmissor: newItem.orgaoEmissor || newItem.issuer || 'UFCG',
+      finalidadeDocumento: newItem.finalidadeDocumento || 'Comprovação de atividades para RSC',
       workloadHours: newItem.workloadHours,
       directiveId: newItem.directiveId as RSCDirectiveId,
       categoryCode: newItem.categoryCode || 'I.1',
@@ -149,7 +174,12 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         `O servidor atua na função de ${userProfile.cargo} na UFCG, tendo desempenhado com êxito a atividade de ${newItem.title}, emitida por ${newItem.issuer}, enquadrando-se nos termos da Tabela Oficial do RSC-PCCTAE.`,
       regulatoryBasis: newItem.regulatoryBasis || 'Tabela Oficial RSC-PCCTAE / Lei 15.367/2026',
       complianceStatus: 'valid',
-      complianceNotes: ['Item cadastrado manualmente pelo servidor'],
+      complianceNotes: dateCheck.isPrior
+        ? ['Documento anterior ao ingresso no serviço público (não pontua)']
+        : ['Item cadastrado pelo servidor'],
+      isPriorToPublicService: dateCheck.isPrior,
+      dateValidationReason: dateCheck.reason,
+      effectiveDocumentDate: effectiveDate,
     };
 
     onAddItem(itemToAdd);
@@ -282,6 +312,44 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Date Validation Alert Banner (Cruzamento com Ingresso no Serviço Público) */}
+      {(() => {
+        const priorItems = rscItems.filter((item) => item.isPriorToPublicService);
+        if (priorItems.length === 0) return null;
+        return (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 md:p-5 shadow-xs space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
+                <Calendar className="h-5 w-5 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xs sm:text-sm font-bold text-amber-950">
+                    Cruzamento de Datas: {priorItems.length} documento(s) com data anterior ao Ingresso no Serviço Público
+                  </h3>
+                  <span className="bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                    Desconsiderado nos Cálculos
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                  Data de ingresso no serviço público: <strong>{formatDateDisplay(entryDate) || 'Não informada'}</strong>. 
+                  Conforme as normas do RSC-PCCTAE, documentos emitidos ou períodos cumpridos antes do ingresso no serviço público não podem ser computados para a pontuação de RSC.
+                </p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {priorItems.map((p) => (
+                    <span key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[11px] font-medium shadow-2xs">
+                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
+                      <span className="font-bold truncate max-w-[220px]">{p.title}</span>
+                      <span className="text-amber-700 text-[10px]">({p.effectiveDocumentDate || p.dataDocumento || 'Data anterior'})</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Rejected / Invalidated Documents Section */}
       {(() => {
@@ -526,6 +594,62 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
               </select>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:col-span-2 bg-white p-3 rounded-lg border border-slate-200">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
+                <input
+                  type="text"
+                  placeholder="DD/MM/AAAA ou AAAA-MM-DD"
+                  value={newItem.dataDocumento || ''}
+                  onChange={(e) => setNewItem({ ...newItem, dataDocumento: e.target.value })}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Data Início / Período</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 01/01/2023"
+                  value={newItem.startDate || ''}
+                  onChange={(e) => setNewItem({ ...newItem, startDate: e.target.value })}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Data Fim</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 31/12/2023"
+                  value={newItem.endDate || ''}
+                  onChange={(e) => setNewItem({ ...newItem, endDate: e.target.value })}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:col-span-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Nº do Documento / Processo SEI</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Portaria Reitoria nº 123/2024 ou 23096.000123/2024-12"
+                  value={newItem.numeroIdentificacaoSei || ''}
+                  onChange={(e) => setNewItem({ ...newItem, numeroIdentificacaoSei: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Período de Vigência / Observação</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Vigência de 2 anos (2023 a 2025)"
+                  value={newItem.periodoVigencia || ''}
+                  onChange={(e) => setNewItem({ ...newItem, periodoVigencia: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2 md:col-span-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Pontos por Unidade</label>
@@ -611,7 +735,11 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                       <span className="text-xs font-semibold text-slate-500 truncate">
                         {dirInfo?.title.split('-')[0]}
                       </span>
-                      {item.complianceStatus === 'valid' ? (
+                      {item.isPriorToPublicService ? (
+                        <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
+                          <ShieldAlert className="h-3 w-3 text-rose-600" /> Anterior ao Ingresso (Não Pontua)
+                        </span>
+                      ) : item.complianceStatus === 'valid' ? (
                         <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-semibold flex items-center gap-1 border border-emerald-200">
                           <CheckCircle className="h-3 w-3" /> Válido
                         </span>
@@ -623,7 +751,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.title}</h3>
+                      <h3 className={`text-sm font-bold leading-snug ${item.isPriorToPublicService ? 'text-slate-600 line-through' : 'text-slate-900'}`}>{item.title}</h3>
                       <button
                         type="button"
                         onClick={() => copyFieldText(item.title, item.id + '_title')}
@@ -636,6 +764,9 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                       <span>Emissor: <strong className="text-slate-700">{item.issuer}</strong></span>
+                      {item.dataDocumento && (
+                        <span className="text-amber-800 font-medium">Data Doc: <strong>{item.dataDocumento}</strong></span>
+                      )}
                       {item.workloadHours && (
                         <span>Carga Horária: <strong className="text-slate-700">{item.workloadHours}h</strong></span>
                       )}
@@ -649,12 +780,25 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                   <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
                     <div className="text-left md:text-right">
                       <span className="text-[10px] uppercase text-slate-400 block font-semibold">Pontuação</span>
-                      <span className="text-base font-black text-indigo-900">
-                        {item.totalScore.toFixed(1)} <span className="text-xs font-normal text-slate-500">pts</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400 block">
-                        ({item.quantity} x {item.unitPoints} pt)
-                      </span>
+                      {item.isPriorToPublicService ? (
+                        <div>
+                          <span className="text-sm font-bold text-slate-400 line-through">
+                            {item.totalScore.toFixed(1)} pts
+                          </span>
+                          <span className="text-[11px] font-black text-rose-600 block">
+                            0.0 pts (Excluído)
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-base font-black text-indigo-900">
+                            {item.totalScore.toFixed(1)} <span className="text-xs font-normal text-slate-500">pts</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 block">
+                            ({item.quantity} x {item.unitPoints} pt)
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-1.5">
@@ -689,6 +833,24 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 {/* Expanded Details Section */}
                 {isExpanded && (
                   <div className="p-4 md:p-5 bg-slate-50 border-t border-slate-200 space-y-4">
+                    {/* Alerta de Documento Anterior ao Ingresso no Serviço Público */}
+                    {item.isPriorToPublicService && (
+                      <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl text-xs text-rose-900 flex items-start gap-3 shadow-2xs">
+                        <ShieldAlert className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <strong className="text-rose-950 font-bold block text-sm">
+                            Documento Desconsiderado dos Cálculos (Anterior ao Ingresso)
+                          </strong>
+                          <p className="text-rose-900 leading-relaxed text-xs">
+                            {item.dateValidationReason || `A data deste documento (${item.effectiveDocumentDate || item.dataDocumento || 'data anterior'}) é anterior ao seu ingresso no serviço público (${formatDateDisplay(entryDate) || 'não configurada'}).`}
+                          </p>
+                          <p className="text-[11px] text-rose-800 font-medium">
+                            ⚖️ <strong>Regra Regulatória:</strong> Pelo regulamento do RSC-PCCTAE, apenas documentos e atividades exercidas a partir do ingresso no serviço público possuem validade probatória para pontuação.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Category Title */}
                     <div className="bg-white border border-slate-200 rounded-xl p-3.5 text-xs flex items-center justify-between gap-3">
                       <div>
@@ -1073,6 +1235,63 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                     value={isEditingItem.categoryCode}
                     onChange={(e) => setIsEditingItem({ ...isEditingItem, categoryCode: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  />
+                </div>
+              </div>
+
+              {/* Campos de Datas e Documento SEI */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
+                  <input
+                    type="text"
+                    placeholder="DD/MM/AAAA ou AAAA-MM-DD"
+                    value={isEditingItem.dataDocumento || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, dataDocumento: e.target.value })}
+                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Data Início</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 01/01/2023"
+                    value={isEditingItem.startDate || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, startDate: e.target.value })}
+                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Data Fim</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 31/12/2023"
+                    value={isEditingItem.endDate || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, endDate: e.target.value })}
+                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Nº do Documento / SEI</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Portaria Reitoria nº 123/2024"
+                    value={isEditingItem.numeroIdentificacaoSei || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, numeroIdentificacaoSei: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Período de Vigência</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 2 anos"
+                    value={isEditingItem.periodoVigencia || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, periodoVigencia: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
               </div>

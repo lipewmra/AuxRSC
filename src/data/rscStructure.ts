@@ -927,13 +927,20 @@ export const LEGAL_SOURCES = [
   },
 ];
 
-export function evaluateRSCCompliance(rscItems: { directiveId: string; categoryCode: string; totalScore: number }[], targetLevel: string) {
+export function evaluateRSCCompliance(
+  rscItems: { directiveId: string; categoryCode: string; totalScore: number; isPriorToPublicService?: boolean }[],
+  targetLevel: string
+) {
   const req = RSC_REQUIREMENTS[targetLevel] || RSC_REQUIREMENTS['RSC-PCCTAE I'];
   const minScore = req?.minTotalScore || 10;
   const minCriterios = req?.minCriteriosCount || 0;
 
-  // Total Score
-  const totalScore = rscItems.reduce((acc, item) => acc + (item.totalScore || 0), 0);
+  // Filtra apenas itens válidos (desconsidera os anteriores ao ingresso no serviço público)
+  const validItems = rscItems.filter((item) => !item.isPriorToPublicService);
+  const excludedDueToDateCount = rscItems.filter((item) => item.isPriorToPublicService).length;
+
+  // Total Score (somente itens vigentes/válidos no período de serviço público)
+  const totalScore = validItems.reduce((acc, item) => acc + (item.totalScore || 0), 0);
 
   // Scores by Requisito
   const scoreByReq: Record<string, number> = {
@@ -945,7 +952,7 @@ export function evaluateRSCCompliance(rscItems: { directiveId: string; categoryC
     requisito_6: 0,
   };
 
-  rscItems.forEach((item) => {
+  validItems.forEach((item) => {
     let dId = item.directiveId;
     if (dId === 'diretriz_1') dId = 'requisito_1';
     if (dId === 'diretriz_2') dId = 'requisito_2';
@@ -957,7 +964,7 @@ export function evaluateRSCCompliance(rscItems: { directiveId: string; categoryC
 
   // Unique category codes that have points > 0 (distinct criteria in table)
   const uniqueCategories = new Set(
-    rscItems.filter((i) => (i.totalScore || 0) > 0).map((i) => i.categoryCode)
+    validItems.filter((i) => (i.totalScore || 0) > 0).map((i) => i.categoryCode)
   );
   const criteriosAlcancados = uniqueCategories.size;
 
@@ -970,21 +977,21 @@ export function evaluateRSCCompliance(rscItems: { directiveId: string; categoryC
 
   if (targetLevel.includes('IV') && !targetLevel.includes('V') && !targetLevel.includes('VI')) {
     // RSC-IV: Pelo menos 1 critério nos Requisitos II, IV, V ou VI
-    const hasReq2456 = rscItems.some((i) =>
+    const hasReq2456 = validItems.some((i) =>
       ['requisito_2', 'requisito_4', 'requisito_5', 'requisito_6', 'diretriz_2', 'diretriz_3'].includes(i.directiveId)
     );
     specialReqMet = hasReq2456;
     specialReqDesc = 'Necessário pelo menos 1 critério nos Requisitos II, IV, V ou VI';
   } else if (targetLevel.includes('V') && !targetLevel.includes('VI')) {
     // RSC-V: Pelo menos 1 critério nos Requisitos IV, V ou VI
-    const hasReq456 = rscItems.some((i) =>
+    const hasReq456 = validItems.some((i) =>
       ['requisito_4', 'requisito_5', 'requisito_6', 'diretriz_3'].includes(i.directiveId)
     );
     specialReqMet = hasReq456;
     specialReqDesc = 'Necessário pelo menos 1 critério nos Requisitos IV, V ou VI';
   } else if (targetLevel.includes('VI')) {
     // RSC-VI: Pelo menos 1 critério no Requisito VI
-    const hasReq6 = rscItems.some((i) =>
+    const hasReq6 = validItems.some((i) =>
       ['requisito_6', 'diretriz_3'].includes(i.directiveId)
     );
     specialReqMet = hasReq6;
@@ -1005,5 +1012,8 @@ export function evaluateRSCCompliance(rscItems: { directiveId: string; categoryC
     specialReqMet,
     specialReqDesc,
     isFullyCompliant,
+    excludedDueToDateCount,
+    validItemsCount: validItems.length,
+    totalItemsCount: rscItems.length,
   };
 }

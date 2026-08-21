@@ -20,6 +20,7 @@ export type RSCLevel =
 
 export interface UserProfile {
   nomeCompleto: string;
+  cpf?: string;
   siape: string;
   cargo: string;
   nivelClassificacao: NivelClassificacao;
@@ -27,7 +28,8 @@ export interface UserProfile {
   titulacaoAtual: TitulacaoAtual;
   rscAlmejado: RSCLevel;
   dataRequerimento: string;
-  dataExercicio: string;
+  dataExercicio?: string;
+  dataIngressoServicoPublico: string;
   observacoes: string;
 }
 
@@ -62,6 +64,11 @@ export interface RSCItem {
   complianceStatus: 'valid' | 'warning' | 'needs_info';
   complianceNotes: string[];
 
+  // Validação de anterioridade da data do documento em relação ao ingresso no serviço público
+  isPriorToPublicService?: boolean;
+  dateValidationReason?: string;
+  effectiveDocumentDate?: string;
+
   // Detailed fields requested by user & GEM instructions
   periodoVigencia?: string;
   finalidadeDocumento?: string;
@@ -88,6 +95,9 @@ export interface UploadedDocument {
   analysisError?: string;
   analyzedAt?: string;
   detectedItemsCount: number;
+  dataDocumento?: string;
+  isPriorToPublicService?: boolean;
+  dateValidationReason?: string;
 }
 
 export interface SessionState {

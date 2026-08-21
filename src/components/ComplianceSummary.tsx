@@ -57,7 +57,9 @@ export const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({
   const [copiedFieldKey, setCopiedFieldKey] = useState<string | null>(null);
 
   // Form Trajectory Fields
-  const [dataIngresso, setDataIngresso] = useState<string>('01/03/2012');
+  const [dataIngresso, setDataIngresso] = useState<string>(
+    userProfile.dataIngressoServicoPublico || userProfile.dataExercicio || '01/03/2012'
+  );
   const [tempoServico, setTempoServico] = useState<string>('14 anos em efetivo exercício');
   const [setoresAtuacao, setSetoresAtuacao] = useState<string>('Secretaria Acadêmica, Comissão Permanente de Licitação, Coordenação Geral');
   const [selectedAreas, setSelectedAreas] = useState<string[]>([
@@ -258,8 +260,12 @@ Número de Identificação (SEI): ${item.numeroIdentificacaoSei || 'Não informa
 Órgão / Unidade Emissora: ${item.orgaoEmissor || item.issuer || 'Órgão Emissor'}
 Data do Documento: ${item.dataDocumento || 'Não informada'} | Período de Vigência: ${item.periodoVigencia || 'Não informado'}
 Finalidade do Documento: ${item.finalidadeDocumento || 'Comprovação das atividades para pontuação de RSC'}
-Pontuação Computada: ${item.totalScore.toFixed(1)} pts
-
+Status de Pontuação: ${
+  item.isPriorToPublicService
+    ? '0.0 pts (DESCONSIDERADO - Documento anterior à data de ingresso no serviço público)'
+    : `${item.totalScore.toFixed(1)} pts (VÁLIDO)`
+}
+${item.isPriorToPublicService ? `Motivo da Invalidação Temporal: ${item.dateValidationReason || 'Data anterior ao ingresso no serviço público'}\n` : ''}
 Justificativa de Enquadramento:
 ${item.justificationText || 'Não informada.'}
 
