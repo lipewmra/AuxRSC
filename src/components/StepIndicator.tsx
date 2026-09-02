@@ -12,30 +12,23 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   onSelectStep,
   completedSteps,
 }) => {
+  // O Passo 3 (Análise IA) é executado como processo em background/modal e não aparece no menu visível conforme solicitado pelo usuário
   const steps = [
-    { id: 1, title: 'Dados do Servidor', icon: User, desc: 'Perfil e RSC Almejado' },
-    { id: 2, title: 'Upload de PDFs', icon: FileText, desc: 'Comprovantes e Cursos' },
-    { id: 3, title: 'Análise Inteligente', icon: Sparkles, desc: 'Extração via IA' },
-    { id: 4, title: 'Calculadora RSC', icon: LayoutGrid, desc: 'Organizador e Textos' },
-    { id: 5, title: 'Relatório Final', icon: CheckCircle2, desc: 'Pontuação e Conformidade' },
+    { id: 1, stepNumber: 1, title: 'Dados do Servidor', icon: User, desc: 'Perfil e Ingresso' },
+    { id: 2, stepNumber: 2, title: 'Upload de PDFs', icon: FileText, desc: 'Envio de Comprovantes' },
+    { id: 4, stepNumber: 3, title: 'Calculadora RSC', icon: LayoutGrid, desc: 'Organizador e Textos' },
+    { id: 5, stepNumber: 4, title: 'Relatório Final', icon: CheckCircle2, desc: 'Pontuação e Parecer' },
   ];
-
-  const iconBgMap: Record<number, string> = {
-    1: '#fff6f6',
-    2: '#f8fafb',
-    3: '#ffffff',
-    4: '#ffffff',
-    5: '#ffffff',
-  };
 
   return (
     <div className="bg-white border-b border-slate-200 py-3 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Progress">
-          <ol className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4">
+          <ol className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
             {steps.map((step) => {
               const Icon = step.icon;
-              const isActive = activeStep === step.id;
+              // Se o activeStep for 3 (durante a análise), destacamos o passo 2 ou 4
+              const isActive = activeStep === step.id || (activeStep === 3 && step.id === 2);
               const isCompleted = completedSteps.includes(step.id);
 
               return (
@@ -52,25 +45,31 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                     }`}
                   >
                     <div
-                      style={{ backgroundColor: iconBgMap[step.id] }}
-                      className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                         isActive
-                          ? 'bg-[#132247] text-[#EAA816] border border-[#EAA816]'
+                          ? 'bg-[#132247] text-[#FEF0B2] border-2 border-[#EAA816] shadow-xs ring-2 ring-[#EAA816]/30'
                           : isCompleted
-                          ? 'bg-[#132247] text-[#54B0EE] stroke-[2.5]'
-                          : 'bg-slate-100 text-[#132247]'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                          : 'bg-white text-[#132247] border border-slate-300'
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon
+                        className="h-4.5 w-4.5 shrink-0"
+                        strokeWidth={isActive ? 2.5 : 2}
+                        style={{
+                          color: isActive ? '#FEF0B2' : isCompleted ? '#047857' : '#132247',
+                          stroke: isActive ? '#FEF0B2' : isCompleted ? '#047857' : '#132247',
+                        }}
+                      />
                     </div>
                     <div className="min-w-0 flex-1 hidden sm:block">
                       <p className={`truncate text-xs ${isActive ? 'font-bold text-[#132247]' : 'font-medium text-slate-800'}`}>
-                        {step.id}. {step.title}
+                        {step.stepNumber}. {step.title}
                       </p>
                       <p className={`text-[10px] truncate ${isActive ? 'text-[#C28600] font-semibold' : 'text-slate-500'}`}>{step.desc}</p>
                     </div>
                     <div className="sm:hidden font-semibold text-xs text-[#132247]">
-                      Passo {step.id}
+                      Passo {step.stepNumber}
                     </div>
                   </button>
                 </li>

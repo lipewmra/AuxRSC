@@ -53,9 +53,9 @@ export default function App() {
     return true;
   };
 
-  // Auto-open celebration animation then tutorial on first visit
+  // Auto-open celebration animation on first visit of v3
   useEffect(() => {
-    const hasSeen = localStorage.getItem('rsc_has_seen_tutorial_v1');
+    const hasSeen = localStorage.getItem('rsc_has_seen_tutorial_v3');
     if (!hasSeen) {
       setIsIntroAnimationOpen(true);
     }
@@ -350,7 +350,8 @@ export default function App() {
         onOpenImport={() => setExportImportModalMode('import')}
         onOpenLegalModal={() => setIsLegalModalOpen(true)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-        onOpenTutorial={() => setIsIntroAnimationOpen(true)}
+        onOpenTutorial={() => setIsTutorialModalOpen(true)}
+        onOpenIntro={() => setIsIntroAnimationOpen(true)}
       />
 
       {/* Step Tracker */}
@@ -435,7 +436,7 @@ export default function App() {
           <p className="font-semibold text-slate-800 flex items-center justify-center gap-2 flex-wrap">
             <span>Auxiliador de Preenchimento do RSC-TAE • Sistema de Suporte à Calculadora RSC (PCCTAE/EBTT)</span>
             <span className="bg-[#132247] text-[#FEF0B2] border border-[#EAA816] text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
-              v2.0
+              v3.0
             </span>
           </p>
           <div className="text-[11px] text-slate-500 flex flex-col items-center justify-center gap-1.5">
@@ -473,7 +474,8 @@ export default function App() {
       {/* Modals */}
       <RscIntroAnimationModal
         isOpen={isIntroAnimationOpen}
-        onComplete={() => {
+        onClose={() => setIsIntroAnimationOpen(false)}
+        onAdvanceToTutorial={() => {
           setIsIntroAnimationOpen(false);
           setIsTutorialModalOpen(true);
         }}
@@ -493,6 +495,10 @@ export default function App() {
         onOpenApiKeyModal={() => {
           setIsTutorialModalOpen(false);
           setIsApiKeyModalOpen(true);
+        }}
+        onOpenIntroModal={() => {
+          setIsTutorialModalOpen(false);
+          setIsIntroAnimationOpen(true);
         }}
       />
 

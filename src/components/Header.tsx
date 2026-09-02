@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calculator, Download, Upload, ExternalLink, ShieldCheck, KeyRound, HelpCircle } from 'lucide-react';
+import { Calculator, Download, Upload, ExternalLink, ShieldCheck, KeyRound, HelpCircle, Sparkles } from 'lucide-react';
 import { UserProfile, RSCItem } from '../types';
 import { RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
 import headerLogo from '../assets/images/regenerated_image_1785769089212.png';
@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenLegalModal: () => void;
   onOpenApiKeyModal: () => void;
   onOpenTutorial: () => void;
+  onOpenIntro: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLegalModal,
   onOpenApiKeyModal,
   onOpenTutorial,
+  onOpenIntro,
 }) => {
   const hasCustomKey = !!getStoredGeminiApiKey();
   const targetLevel = userProfile.rscAlmejado || 'RSC-PCCTAE I';
@@ -56,8 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                 <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-tight text-[#132247] leading-tight break-words flex items-center gap-2">
                   Auxiliador de Preenchimento do <span className="text-[#C28600] font-extrabold">RSC-TAE</span>
-                  <span className="bg-[#132247] text-[#FEF0B2] text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full border border-[#EAA816] shadow-2xs shrink-0">
-                    v2.0
+                  <span className="bg-[#132247] text-[#FEF0B2] text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full border border-[#EAA816] shadow-2xs shrink-0">
+                    v3.0
                   </span>
                 </h1>
               </div>
@@ -106,11 +108,21 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto min-w-[320px]">
               <button
                 type="button"
-                onClick={onOpenTutorial}
+                onClick={onOpenIntro}
                 className="w-full px-2 py-1.5 text-xs font-bold text-white bg-[#132247] hover:bg-[#1C3366] border border-[#EAA816] rounded-md transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
-                title="Abrir Tutorial e Guia de Uso do Sistema"
+                title="Ver Tela de Abertura e Apresentação do Sistema"
               >
-                <HelpCircle className="h-3.5 w-3.5 text-[#EAA816] shrink-0" />
+                <Sparkles className="h-3.5 w-3.5 text-[#FEF0B2] shrink-0" />
+                <span>Abertura</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenTutorial}
+                className="w-full px-2 py-1.5 text-xs font-semibold text-[#132247] bg-white hover:bg-[#FEF0B2]/60 hover:border-[#EAA816] rounded-md border border-slate-300 transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                title="Abrir Tutorial e Guia de Uso Passo a Passo"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-[#132247] shrink-0" />
                 <span>Tutorial</span>
               </button>
 
@@ -154,11 +166,11 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenExport}
-                className="col-span-2 w-full px-2.5 py-1.5 text-xs font-bold text-white bg-[#132247] hover:bg-[#1C3366] rounded-md border-2 border-[#EAA816] transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                className="w-full px-2 py-1.5 text-xs font-bold text-white bg-[#132247] hover:bg-[#1C3366] rounded-md border border-[#EAA816] transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
                 title="Exportar sessão atual para arquivo JSON"
               >
-                <Download className="h-3.5 w-3.5 text-[#EAA816] shrink-0" />
-                <span className="text-white">Salvar Sessão</span>
+                <Download className="h-3.5 w-3.5 text-[#FEF0B2] shrink-0" />
+                <span>Salvar</span>
               </button>
             </div>
 

@@ -64,6 +64,13 @@ export interface RSCItem {
   complianceStatus: 'valid' | 'warning' | 'needs_info';
   complianceNotes: string[];
 
+  // Auditoria e Gestão de Itens no Passo 4
+  isCompleted?: boolean;             // Checkbox de concluído / conferido
+  isDiscarded?: boolean;             // Mover para caixa vermelha (descartar/desconsiderar no final da tela)
+  discardReason?: string;            // Motivo do descarte se aplicável
+  familyGroupKey?: string;           // Identificador do grupo de mesma família
+  isFamilyConsolidated?: boolean;    // Indica se os textos A, B e C foram unificados com a família
+
   // Validação de anterioridade da data do documento em relação ao ingresso no serviço público
   isPriorToPublicService?: boolean;
   dateValidationReason?: string;
@@ -79,6 +86,22 @@ export interface RSCItem {
   diferencialAtuacaoTexto?: string;      // (B: max 600 chars)
   impactosSaberesTexto?: string;         // (C: max 600 chars)
   trechoComprobatorioExato?: string;     // Grounding Rígido (citação literal)
+}
+
+export interface AnalysisLogEntry {
+  docId: string;
+  fileName: string;
+  fileSize: number;
+  analyzedAt: string;
+  status: 'success' | 'rejected' | 'error';
+  modelUsed?: string;
+  confiancaOcr?: string;
+  tipoDocumento?: string;
+  detectedItemsCount: number;
+  itemTitles: string[];
+  totalScoreDetected: number;
+  motivoRejeicao?: string;
+  errorMessage?: string;
 }
 
 export interface UploadedDocument {

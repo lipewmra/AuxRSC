@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RSCItem, UserProfile, RSCDirectiveId, UploadedDocument } from '../types';
 import { DIRECTIVE_NAMES, STANDARD_CATEGORIES, RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
 import { checkDocumentPriorToEntryDate, getItemEffectiveDate, formatDateDisplay } from '../utils/dateValidation';
+import { EvidenceQuoteModal } from './EvidenceQuoteModal';
+import { AnalysisReportModal } from './AnalysisReportModal';
+import { FamilyTextConsolidationModal } from './FamilyTextConsolidationModal';
+import { ConsolidatedFamilyTexts } from '../utils/textConsolidation';
 import {
   LayoutGrid,
   Plus,
@@ -13,13 +17,19 @@ import {
   AlertTriangle,
   AlertCircle,
   CheckCircle,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   RefreshCw,
   Quote,
   Calendar,
   ShieldAlert,
+  Sparkles,
+  Layers,
+  CheckSquare,
+  Square,
+  Ban,
+  RotateCcw,
+  BarChart3,
 } from 'lucide-react';
 
 interface RscCalculatorOrganizerProps {
@@ -49,17 +59,16 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
   const [copiedFieldKey, setCopiedFieldKey] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
-  const copyFieldText = (text: string, key: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedFieldKey(key);
-    setTimeout(() => setCopiedFieldKey(null), 2000);
-  };
+  // Modais de UX
+  const [evidenceModalItem, setEvidenceModalItem] = useState<RSCItem | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [familyModalItems, setFamilyModalItems] = useState<RSCItem[] | null>(null);
+
   const [isEditingItem, setIsEditingItem] = useState<RSCItem | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [loadingRegenId, setLoadingRegenId] = useState<string | null>(null);
 
-  // New Item State
+  // Formulário de Novo Item
   const [newItem, setNewItem] = useState<Partial<RSCItem>>({
     title: '',
     issuer: '',
@@ -75,10 +84,34 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
     complianceNotes: ['Adicionado manualmente'],
   });
 
+  const copyFieldText = (text: string, key: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedFieldKey(key);
+    setTimeout(() => setCopiedFieldKey(null), 2000);
+  };
+
+  // Separação de itens ativos vs. descartados (caixa vermelha no final)
+  const activeItems = useMemo(
+    () => rscItems.filter((it) => !it.isDiscarded),
+    [rscItems]
+  );
+
+  const discardedItems = useMemo(
+    () => rscItems.filter((it) => it.isDiscarded),
+    [rscItems]
+  );
+
+  // Contadores de Checkbox de Concluído
+  const totalActiveCount = activeItems.length;
+  const completedCount = activeItems.filter((it) => it.isCompleted).length;
+  const pendingCount = totalActiveCount - completedCount;
+  const completionPercentage = totalActiveCount > 0 ? Math.round((completedCount / totalActiveCount) * 100) : 0;
+
+  // Avaliação de conformidade com RSC (apenas itens ativos e não anteriores ao ingresso)
   const targetLevel = userProfile.rscAlmejado || 'RSC-PCCTAE I';
-  const evaluation = evaluateRSCCompliance(rscItems, targetLevel);
+  const evaluation = evaluateRSCCompliance(activeItems, targetLevel);
   const {
-    req,
     totalScore,
     minScore,
     criteriosAlcancados,
@@ -86,31 +119,124 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
     scoreByReq,
     isScoreSufficient,
     isCriteriosSufficient,
-    specialReqMet,
-    specialReqDesc,
     isFullyCompliant,
   } = evaluation;
 
-  const scoreR1 = scoreByReq.requisito_1;
-  const scoreR2 = scoreByReq.requisito_2;
-  const scoreR3 = scoreByReq.requisito_3;
-  const scoreR4 = scoreByReq.requisito_4;
-  const scoreR5 = scoreByReq.requisito_5;
-  const scoreR6 = scoreByReq.requisito_6;
+  const entryDate = userProfile.dataIngressoServicoPublico || userProfile.dataExercicio;
 
-  const filteredItems =
-    selectedDirective === 'all'
-      ? rscItems
-      : rscItems.filter((i) => {
-          if (i.directiveId === selectedDirective) return true;
-          if (selectedDirective === 'requisito_1' && i.directiveId === 'diretriz_1') return true;
-          if (selectedDirective === 'requisito_2' && i.directiveId === 'diretriz_2') return true;
-          if (selectedDirective === 'requisito_6' && i.directiveId === 'diretriz_3') return true;
-          return false;
-        });
+  // Ordenação padronizada dos 6 Requisitos
+  const orderedDirectives: { id: RSCDirectiveId; name: string; roman: string; desc: string }[] = [
+    { id: 'requisito_1', name: 'Requisito I', roman: 'I', desc: 'Comissões, Colegiados e GTs' },
+    { id: 'requisito_2', name: 'Requisito II', roman: 'II', desc: 'Projetos Institucionais e Gestão' },
+    { id: 'requisito_3', name: 'Requisito III', roman: 'III', desc: 'Premiações em Eventos' },
+    { id: 'requisito_4', name: 'Requisito IV', roman: 'IV', desc: 'Responsabilidades Técnicas' },
+    { id: 'requisito_5', name: 'Requisito V', roman: 'V', desc: 'Cargos CD e Funções FG' },
+    { id: 'requisito_6', name: 'Requisito VI', roman: 'VI', desc: 'Produção e Difusão' },
+  ];
+
+  // Normalizador de ID de Requisito para agrupamento
+  const normalizeDirective = (dirId: string): RSCDirectiveId => {
+    if (dirId === 'diretriz_1') return 'requisito_1';
+    if (dirId === 'diretriz_2') return 'requisito_2';
+    if (dirId === 'diretriz_3') return 'requisito_6';
+    return (dirId as RSCDirectiveId) || 'requisito_1';
+  };
+
+  // Agrupamento por Requisitos e Itens / Famílias
+  const groupedSections = useMemo(() => {
+    const filtered =
+      selectedDirective === 'all'
+        ? activeItems
+        : activeItems.filter((i) => normalizeDirective(i.directiveId) === selectedDirective);
+
+    const result: {
+      directive: { id: RSCDirectiveId; name: string; roman: string; desc: string };
+      categories: {
+        categoryCode: string;
+        categoryName: string;
+        directiveId: RSCDirectiveId;
+        items: RSCItem[];
+        isFamily: boolean;
+        familyScore: number;
+      }[];
+    }[] = [];
+
+    orderedDirectives.forEach((dir) => {
+      const itemsInDir = filtered.filter((it) => normalizeDirective(it.directiveId) === dir.id);
+      if (itemsInDir.length === 0 && selectedDirective !== 'all') return;
+      if (itemsInDir.length === 0) return;
+
+      // Agrupa por código de categoria (Item/Critério)
+      const catMap = new Map<string, RSCItem[]>();
+      itemsInDir.forEach((item) => {
+        const code = item.categoryCode || 'Geral';
+        if (!catMap.has(code)) {
+          catMap.set(code, []);
+        }
+        catMap.get(code)!.push(item);
+      });
+
+      // Ordena as categorias pelo código
+      const sortedCatCodes = Array.from(catMap.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      const categories = sortedCatCodes.map((code) => {
+        const list = catMap.get(code)!;
+        const first = list[0];
+        const validItems = list.filter((it) => !it.isPriorToPublicService);
+        const familyScore = validItems.reduce((acc, it) => acc + it.totalScore, 0);
+
+        return {
+          categoryCode: code,
+          categoryName: first.categoryName || 'Atividades RSC',
+          directiveId: dir.id,
+          items: list,
+          isFamily: list.length > 1,
+          familyScore,
+        };
+      });
+
+      result.push({
+        directive: dir,
+        categories,
+      });
+    });
+
+    return result;
+  }, [activeItems, selectedDirective]);
+
+  // Ações de Checkbox
+  const handleToggleCompleted = (item: RSCItem) => {
+    onUpdateItem({
+      ...item,
+      isCompleted: !item.isCompleted,
+    });
+  };
+
+  const handleToggleDiscarded = (item: RSCItem) => {
+    onUpdateItem({
+      ...item,
+      isDiscarded: !item.isDiscarded,
+      // Se estava expandido, fecha
+    });
+  };
+
+  // Aplicação de Textos Unidos da Família
+  const handleApplyFamilyTexts = (texts: ConsolidatedFamilyTexts) => {
+    if (!familyModalItems || familyModalItems.length === 0) return;
+
+    familyModalItems.forEach((it) => {
+      onUpdateItem({
+        ...it,
+        experienciaProfissionalTexto: texts.experienciaProfissionalTexto,
+        diferencialAtuacaoTexto: texts.diferencialAtuacaoTexto,
+        impactosSaberesTexto: texts.impactosSaberesTexto,
+        isFamilyConsolidated: true,
+      });
+    });
+  };
 
   const handleCopyParams = (item: RSCItem) => {
-    const text = `Calculadora RSC (www.calculadorarsc.com)\nItem: ${item.title}\nCategoria: ${item.categoryCode} - ${item.categoryName}\nPontos Unitários: ${item.unitPoints}\nQuantidade: ${item.quantity}\nPontuação Total: ${item.totalScore.toFixed(1)} pts\nJustificativa: ${item.justificationText}`;
+    const text = `Calculadora RSC (www.calculadorarsc.com)\nItem: ${item.title}\nCategoria: ${item.categoryCode} - ${item.categoryName}\nPontos Unitários: ${item.unitPoints}\nQuantidade: ${item.quantity}\nPontuação Total: ${item.totalScore.toFixed(1)} pts\nArquivo: ${item.documentName || 'Anexo'}\nJustificativa: ${item.justificationText}`;
     navigator.clipboard.writeText(text);
     setCopiedId(item.id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -122,7 +248,14 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
     setTimeout(() => setCopiedJustificationId(null), 2000);
   };
 
-  const entryDate = userProfile.dataIngressoServicoPublico || userProfile.dataExercicio;
+  const handleTriggerRegen = async (item: RSCItem) => {
+    setLoadingRegenId(item.id);
+    try {
+      await onRegenerateJustification(item);
+    } finally {
+      setLoadingRegenId(null);
+    }
+  };
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,41 +281,36 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       ...newItem,
       effectiveDocumentDate: getItemEffectiveDate(newItem as RSCItem),
     };
-    const effectiveDate = getItemEffectiveDate(tempItem as RSCItem);
-    const dateCheck = checkDocumentPriorToEntryDate(effectiveDate, entryDate);
+    const dateCheck = checkDocumentPriorToEntryDate(tempItem.effectiveDocumentDate, entryDate);
 
-    const itemToAdd: RSCItem = {
+    const created: RSCItem = {
       id: 'item_' + Math.random().toString(36).substr(2, 9),
-      title: newItem.title || 'Nova Atividade',
-      issuer: newItem.issuer || 'UFCG',
+      title: newItem.title || '',
+      issuer: newItem.issuer || '',
       startDate: newItem.startDate,
       endDate: newItem.endDate,
-      dataDocumento: newItem.dataDocumento,
-      periodoVigencia: newItem.periodoVigencia,
-      numeroIdentificacaoSei: newItem.numeroIdentificacaoSei,
-      orgaoEmissor: newItem.orgaoEmissor || newItem.issuer || 'UFCG',
-      finalidadeDocumento: newItem.finalidadeDocumento || 'Comprovação de atividades para RSC',
       workloadHours: newItem.workloadHours,
-      directiveId: newItem.directiveId as RSCDirectiveId,
+      directiveId: newItem.directiveId || 'requisito_1',
       categoryCode: newItem.categoryCode || 'I.1',
       categoryName: newItem.categoryName || 'Categoria RSC',
-      unitPoints: Number(newItem.unitPoints) || 1,
-      quantity: Number(newItem.quantity) || 1,
-      totalScore: (Number(newItem.unitPoints) || 1) * (Number(newItem.quantity) || 1),
-      justificationText:
-        newItem.justificationText ||
-        `O servidor atua na função de ${userProfile.cargo} na UFCG, tendo desempenhado com êxito a atividade de ${newItem.title}, emitida por ${newItem.issuer}, enquadrando-se nos termos da Tabela Oficial do RSC-PCCTAE.`,
-      regulatoryBasis: newItem.regulatoryBasis || 'Tabela Oficial RSC-PCCTAE / Lei 15.367/2026',
+      unitPoints: newItem.unitPoints || 1.0,
+      quantity: newItem.quantity || 1,
+      totalScore: (newItem.unitPoints || 1.0) * (newItem.quantity || 1),
+      justificationText: newItem.justificationText || '',
+      regulatoryBasis: newItem.regulatoryBasis || 'Tabela Oficial RSC UFCG',
       complianceStatus: 'valid',
-      complianceNotes: dateCheck.isPrior
-        ? ['Documento anterior ao ingresso no serviço público (não pontua)']
-        : ['Item cadastrado pelo servidor'],
+      complianceNotes: ['Cadastrado manualmente'],
       isPriorToPublicService: dateCheck.isPrior,
       dateValidationReason: dateCheck.reason,
-      effectiveDocumentDate: effectiveDate,
+      effectiveDocumentDate: tempItem.effectiveDocumentDate,
+      dataDocumento: newItem.dataDocumento,
+      numeroIdentificacaoSei: newItem.numeroIdentificacaoSei || 'Documento Manual',
+      orgaoEmissor: newItem.issuer,
+      periodoVigencia: newItem.periodoVigencia,
+      documentName: 'Adicionado Manualmente',
     };
 
-    onAddItem(itemToAdd);
+    onAddItem(created);
     setIsAddingNew(false);
     setNewItem({
       title: '',
@@ -194,131 +322,155 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       quantity: 1,
       totalScore: 3.0,
       justificationText: '',
-      regulatoryBasis: 'Anexo I - Item 1 (Tabela RSC)',
+      regulatoryBasis: 'Anexo I - Item 1 (Lei 15.367/2026 / Tabela RSC)',
       complianceStatus: 'valid',
       complianceNotes: ['Adicionado manualmente'],
     });
   };
 
-  const handleTriggerRegen = async (item: RSCItem) => {
-    setLoadingRegenId(item.id);
-    try {
-      await onRegenerateJustification(item);
-    } finally {
-      setLoadingRegenId(null);
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Scores Breakdown */}
-      <div className="bg-[#132247] text-white rounded-2xl p-6 shadow-sm border-2 border-[#EAA816]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-[#EAA816]/40">
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Modais de Suporte */}
+      <EvidenceQuoteModal
+        item={evidenceModalItem}
+        onClose={() => setEvidenceModalItem(null)}
+      />
+
+      <AnalysisReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        documents={documents}
+        rscItems={rscItems}
+      />
+
+      {familyModalItems && (
+        <FamilyTextConsolidationModal
+          isOpen={!!familyModalItems}
+          onClose={() => setFamilyModalItems(null)}
+          items={familyModalItems}
+          userProfile={userProfile}
+          onApply={handleApplyFamilyTexts}
+        />
+      )}
+
+      {/* Top Banner: Auditoria, Pontuação e Botão do Relatório do Passo 3 */}
+      <div className="bg-[#132247] text-white rounded-2xl p-5 md:p-6 shadow-md border-2 border-[#EAA816] space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#EAA816] bg-[#FEF0B2]/15 px-2.5 py-0.5 rounded-full border border-[#EAA816]/40">
-              Matriz Oficial do RSC-PCCTAE (Anexos I a VI)
-            </span>
-            <h2 className="text-xl font-bold tracking-tight text-white mt-1.5 flex items-center gap-2">
-              Organizador de Conteúdos e Justificativas
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-[#EAA816] text-[#132247] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                Passo 4: Calculadora RSC UFCG
+              </span>
+              <span className="bg-white/10 text-white/90 text-xs px-2.5 py-0.5 rounded-md font-medium border border-white/15">
+                {userProfile.cargo || 'TAE'} • {targetLevel}
+              </span>
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-white mt-1.5 flex items-center gap-2">
+              Organizador de Requisitos e Comprovantes
             </h2>
-            <p className="text-xs text-slate-200 mt-1">
-              Copie os dados e justificativas para preenchimento no sistema oficial e no site{' '}
-              <a
-                href="https://www.calculadorarsc.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#EAA816] hover:underline inline-flex items-center gap-1 font-bold"
-              >
-                calculadorarsc.com <ExternalLink className="h-3 w-3 text-[#EAA816]" />
-              </a>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+              Itens agrupados e ordenados por requisitos e critérios oficiais da Tabela RSC. Revise cada comprovante, confira os textos complementares consolidados e audite suas pontuações.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 bg-[#1C3366] border-2 border-[#EAA816]/70 p-4 rounded-xl shrink-0">
-            {/* Total Points Counter */}
-            <div className="pr-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Pontuação Total</p>
-              <p className={`text-2xl font-black ${isScoreSufficient ? 'text-emerald-400' : 'text-[#EAA816]'}`}>
+          {/* Botão de Acesso ao Relatório do Passo 3 */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsReportModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition cursor-pointer flex items-center gap-2 shadow-xs"
+            >
+              <BarChart3 className="h-4 w-4 text-[#EAA816]" />
+              <span>Relatório do Passo 3 (IA)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Métricas: Pontuação, Critérios e Checklist de Conclusão */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Pontuação */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase text-slate-300 block">Pontuação Apurada</span>
+              <span className={`text-2xl font-black ${isScoreSufficient ? 'text-emerald-400' : 'text-[#EAA816]'}`}>
                 {totalScore.toFixed(1)}{' '}
-                <span className="text-xs font-medium text-slate-300">/ {minScore} pts</span>
-              </p>
+                <span className="text-xs font-normal text-slate-300">/ {minScore} pts mínimos</span>
+              </span>
             </div>
+            <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
+              isScoreSufficient ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-[#EAA816]/20 text-[#EAA816] border border-[#EAA816]/50'
+            }`}>
+              {isScoreSufficient ? 'Suficiente' : 'Pendente'}
+            </div>
+          </div>
 
-            <div className="h-10 w-[1px] bg-[#EAA816]/40 hidden sm:block" />
-
-            {/* Criteria Count (Número de Critérios requeridos pela lei) */}
-            <div className="px-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Critérios Alcançados</p>
-              <p className={`text-2xl font-black ${isCriteriosSufficient ? 'text-emerald-400' : 'text-[#EAA816]'}`}>
+          {/* Critérios Alcançados */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase text-slate-300 block">Critérios com Pontuação</span>
+              <span className={`text-2xl font-black ${isCriteriosSufficient ? 'text-emerald-400' : 'text-[#EAA816]'}`}>
                 {criteriosAlcancados}{' '}
-                <span className="text-xs font-medium text-slate-300">/ {minCriterios} exigidos</span>
-              </p>
+                <span className="text-xs font-normal text-slate-300">/ {minCriterios} exigidos</span>
+              </span>
             </div>
+            <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
+              isCriteriosSufficient ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-[#EAA816]/20 text-[#EAA816] border border-[#EAA816]/50'
+            }`}>
+              {isCriteriosSufficient ? 'Cumprido' : 'Pendente'}
+            </div>
+          </div>
 
-            <div className="h-10 w-[1px] bg-[#EAA816]/40 hidden sm:block" />
-
-            {/* Overall Level Status */}
-            <div className="pl-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Status no {targetLevel}</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-                  isFullyCompliant 
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                    : 'bg-[#EAA816]/20 text-[#EAA816] border border-[#EAA816]/50'
-                }`}>
-                  {isFullyCompliant ? 'APTO - Requisitos Cumpridos' : 'PENDENTE DE REQUISITOS'}
+          {/* Contador de Itens Concluídos (Item 6 solicitado pelo usuário) */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase text-slate-300 block">
+                Itens Conferidos
+              </span>
+              <span className="text-xs font-bold text-emerald-400">
+                {pendingCount === 0 ? 'Tudo Conferido!' : `Faltam ${pendingCount} para marcar`}
+              </span>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline justify-between text-xs mb-1">
+                <span className="font-bold text-white">
+                  {completedCount} de {totalActiveCount} concluídos
                 </span>
+                <span className="text-[11px] text-slate-300">{completionPercentage}%</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-white/10">
+                <div
+                  className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${completionPercentage}%` }}
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Score per Requisito Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-6">
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito I</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR1.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">GTs/Comissões</span>
-          </div>
-
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito II</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR2.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">Projetos/Gestão</span>
-          </div>
-
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito III</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR3.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">Premiações</span>
-          </div>
-
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito IV</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR4.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">Resp. Técnicas</span>
-          </div>
-
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito V</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR5.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">Funções CD/FG</span>
-          </div>
-
-          <div className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-3 text-center">
-            <span className="text-[10px] text-slate-300 font-semibold block">Requisito VI</span>
-            <span className="text-sm font-bold text-[#EAA816]">{scoreR6.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-300 block truncate">Produção Técnica</span>
-          </div>
+        {/* Resumo por Requisito I ao VI */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2.5 pt-2">
+          {orderedDirectives.map((dir) => {
+            const score = scoreByReq[dir.id] || 0;
+            return (
+              <div
+                key={dir.id}
+                className="bg-[#1C3366]/90 border border-[#EAA816]/40 rounded-xl p-2.5 text-center transition hover:border-[#EAA816]"
+              >
+                <span className="text-[10px] text-slate-300 font-semibold block">{dir.name}</span>
+                <span className="text-sm font-bold text-[#EAA816]">{score.toFixed(1)} pts</span>
+                <span className="text-[9px] text-slate-300 block truncate">{dir.desc}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Date Validation Alert Banner (Cruzamento com Ingresso no Serviço Público) */}
+      {/* Alerta de Anterioridade ao Ingresso no Serviço Público */}
       {(() => {
-        const priorItems = rscItems.filter((item) => item.isPriorToPublicService);
+        const priorItems = activeItems.filter((item) => item.isPriorToPublicService);
         if (priorItems.length === 0) return null;
         return (
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 md:p-5 shadow-xs space-y-2">
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 shadow-xs space-y-2">
             <div className="flex items-start gap-3">
               <div className="h-9 w-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
                 <Calendar className="h-5 w-5 text-amber-700" />
@@ -326,21 +478,23 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-xs sm:text-sm font-bold text-amber-950">
-                    Cruzamento de Datas: {priorItems.length} documento(s) com data anterior ao Ingresso no Serviço Público
+                    Cruzamento com Ingresso no Serviço Público: {priorItems.length} documento(s) com data anterior a {formatDateDisplay(entryDate) || 'não informada'}
                   </h3>
                   <span className="bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
-                    Desconsiderado nos Cálculos
+                    Não Pontua
                   </span>
                 </div>
                 <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                  Data de ingresso no serviço público: <strong>{formatDateDisplay(entryDate) || 'Não informada'}</strong>. 
-                  Conforme as normas do RSC-PCCTAE, documentos emitidos ou períodos cumpridos antes do ingresso no serviço público não podem ser computados para a pontuação de RSC.
+                  Pelo regulamento do RSC-PCCTAE, apenas documentos emitidos e atividades executadas após o ingresso no serviço público ({formatDateDisplay(entryDate) || 'não informado'}) pontuam. Esses itens estão desconsiderados dos cálculos.
                 </p>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {priorItems.map((p) => (
-                    <span key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[11px] font-medium shadow-2xs">
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[11px] font-medium shadow-2xs"
+                    >
                       <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
-                      <span className="font-bold truncate max-w-[220px]">{p.title}</span>
+                      <span className="font-bold truncate max-w-[200px]">{p.title}</span>
                       <span className="text-amber-700 text-[10px]">({p.effectiveDocumentDate || p.dataDocumento || 'Data anterior'})</span>
                     </span>
                   ))}
@@ -351,75 +505,9 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         );
       })()}
 
-      {/* Rejected / Invalidated Documents Section */}
-      {(() => {
-        const rejectedDocs = (documents || []).filter(
-          (doc) => doc.analyzed && (doc.documentoValido === false || doc.analysisError)
-        );
-        if (rejectedDocs.length === 0) return null;
-        return (
-          <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-5 shadow-xs space-y-3">
-            <div className="flex items-start justify-between gap-3 border-b border-rose-200 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center shrink-0">
-                  <AlertCircle className="h-5 w-5 text-rose-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
-                    Documentos Invalidados / Rejeitados na Triagem ({rejectedDocs.length})
-                    <span className="bg-rose-600 text-white text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full">
-                      Bloqueado na Fase 1 (Gatekeeper)
-                    </span>
-                  </h3>
-                  <p className="text-xs text-rose-800 mt-0.5">
-                    Os seguintes arquivos foram invalidados na verificação de autenticidade/legibilidade e não pontuam na Calculadora RSC:
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {rejectedDocs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="bg-white border-2 border-rose-200 rounded-xl p-4 shadow-xs space-y-2.5 relative overflow-hidden"
-                >
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-4 w-4 text-rose-600 shrink-0" />
-                      <span className="font-bold text-xs text-slate-900 truncate" title={doc.fileName}>
-                        {doc.fileName}
-                      </span>
-                    </div>
-                    <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md shrink-0">
-                      REJEITADO
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                    <span>Tipo: <strong className="text-slate-800 font-semibold">{doc.tipoDocumento || 'Inválido'}</strong></span>
-                    <span>•</span>
-                    <span>OCR: <strong className="text-slate-800 font-semibold">{doc.confiancaOcr || 'Baixa'}</strong></span>
-                  </div>
-
-                  <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-900 space-y-1">
-                    <span className="font-bold text-rose-950 text-[11px] uppercase tracking-wider block flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5 text-rose-600" /> Motivo do Não Aceite / Rejeição:
-                    </span>
-                    <p className="text-xs font-medium leading-relaxed text-rose-900">
-                      {doc.motivoRejeicao || doc.analysisError || 'Documento sem timbre, ilegível ou sem valor probatório oficial com assinatura/autenticação.'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Tabs & Controls */}
+      {/* Barra de Filtro por Requisito e Botão de Adição Manual */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Directive Filter Buttons */}
+        {/* Filtros de Requisitos */}
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
@@ -430,90 +518,38 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
             }`}
           >
-            Todos ({rscItems.length})
+            Todos os Requisitos ({activeItems.length})
           </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_1')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_1'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. I (Comissões)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_2')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_2'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. II (Projetos)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_3')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_3'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. III (Prêmios)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_4')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_4'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. IV (Resp. Técnica)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_5')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_5'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. V (CD/FG)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDirective('requisito_6')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              selectedDirective === 'requisito_6'
-                ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
-            }`}
-          >
-            Req. VI (Produção)
-          </button>
+          {orderedDirectives.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setSelectedDirective(d.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                selectedDirective === d.id
+                  ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
+              }`}
+            >
+              {d.name}
+            </button>
+          ))}
         </div>
 
-        {/* Add Manual Item Button */}
+        {/* Adicionar Item Manual */}
         <button
           type="button"
           onClick={() => setIsAddingNew(true)}
           className="px-3.5 py-1.5 bg-[#132247] hover:bg-[#1C3366] text-white text-xs font-bold rounded-lg border-2 border-[#EAA816] shadow-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <Plus className="h-4 w-4 text-[#EAA816]" />
-          <span className="text-white font-bold">Adicionar Item Manual</span>
+          <span>Cadastrar Item Manual</span>
         </button>
       </div>
 
-      {/* Manual Item Add Form Modal / Drawer */}
+      {/* Formulário de Adicionar Item Manual */}
       {isAddingNew && (
-        <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-6 space-y-4">
+        <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-6 space-y-4 animate-in fade-in duration-150">
           <div className="flex justify-between items-center pb-2 border-b border-emerald-200">
             <h3 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
               <Plus className="h-4 w-4 text-emerald-600" />
@@ -536,7 +572,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 required
                 value={newItem.title}
                 onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                placeholder="Ex: Portaria de Designação da Comissão de Avaliação..."
+                placeholder="Ex: Portaria de Designação de Comissão..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
               />
             </div>
@@ -548,7 +584,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 required
                 value={newItem.issuer}
                 onChange={(e) => setNewItem({ ...newItem, issuer: e.target.value })}
-                placeholder="Ex: Reitoria UFCG, SRH, ENAP..."
+                placeholder="Ex: Reitoria UFCG, SRH..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
               />
             </div>
@@ -560,12 +596,11 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 onChange={(e) => setNewItem({ ...newItem, directiveId: e.target.value as RSCDirectiveId })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-semibold text-slate-800"
               >
-                <option value="requisito_1">Requisito I - Grupos de Trabalho e Comissões</option>
-                <option value="requisito_2">Requisito II - Projetos Institucionais e Gestão</option>
-                <option value="requisito_3">Requisito III - Premiações em Eventos Públicos</option>
-                <option value="requisito_4">Requisito IV - Responsabilidades Técnicas e Licitações</option>
-                <option value="requisito_5">Requisito V - Cargos de Direção e Funções (CD/FG)</option>
-                <option value="requisito_6">Requisito VI - Produção e Difusão de Conhecimento</option>
+                {orderedDirectives.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} — {d.desc}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -599,14 +634,14 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
                 <input
                   type="text"
-                  placeholder="DD/MM/AAAA ou AAAA-MM-DD"
+                  placeholder="DD/MM/AAAA"
                   value={newItem.dataDocumento || ''}
                   onChange={(e) => setNewItem({ ...newItem, dataDocumento: e.target.value })}
                   className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Data Início / Período</label>
+                <label className="block font-semibold text-slate-700 mb-1">Data Início</label>
                 <input
                   type="text"
                   placeholder="Ex: 01/01/2023"
@@ -627,66 +662,46 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:col-span-2">
+            <div className="grid grid-cols-2 gap-3 md:col-span-2">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Nº do Documento / Processo SEI</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Portaria Reitoria nº 123/2024 ou 23096.000123/2024-12"
-                  value={newItem.numeroIdentificacaoSei || ''}
-                  onChange={(e) => setNewItem({ ...newItem, numeroIdentificacaoSei: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Período de Vigência / Observação</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Vigência de 2 anos (2023 a 2025)"
-                  value={newItem.periodoVigencia || ''}
-                  onChange={(e) => setNewItem({ ...newItem, periodoVigencia: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 md:col-span-2">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Pontos por Unidade</label>
+                <label className="block font-semibold text-slate-700 mb-1">Pontos Unitários</label>
                 <input
                   type="number"
                   step="0.1"
                   value={newItem.unitPoints}
-                  onChange={(e) => setNewItem({ ...newItem, unitPoints: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const pts = parseFloat(e.target.value) || 0;
+                    setNewItem({
+                      ...newItem,
+                      unitPoints: pts,
+                      totalScore: pts * (newItem.quantity || 1),
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                 />
               </div>
+
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Quantidade</label>
+                <label className="block font-semibold text-slate-700 mb-1">Quantidade / Multiplicador</label>
                 <input
                   type="number"
-                  step="0.5"
+                  step="1"
+                  min="1"
                   value={newItem.quantity}
-                  onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 1 })}
+                  onChange={(e) => {
+                    const qty = parseFloat(e.target.value) || 1;
+                    setNewItem({
+                      ...newItem,
+                      quantity: qty,
+                      totalScore: (newItem.unitPoints || 1) * qty,
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                 />
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">
-                Texto da Justificativa Fundamentada (opcional - pode ser gerado com IA)
-              </label>
-              <textarea
-                rows={3}
-                value={newItem.justificationText}
-                onChange={(e) => setNewItem({ ...newItem, justificationText: e.target.value })}
-                placeholder="Deixe em branco para gerar automaticamente ou escreva sua justificativa..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white resize-none"
-              />
-            </div>
-
-            <div className="md:col-span-2 flex justify-end space-x-2 pt-2">
+            <div className="md:col-span-2 flex justify-end space-x-2 pt-3 border-t border-emerald-200">
               <button
                 type="button"
                 onClick={() => setIsAddingNew(false)}
@@ -705,485 +720,519 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         </div>
       )}
 
-      {/* Item List */}
-      {filteredItems.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 space-y-3">
-          <LayoutGrid className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-sm font-semibold text-slate-700">Nenhum item neste requisito</p>
-          <p className="text-xs text-slate-400">
-            Anexe PDFs na etapa anterior para extração automática ou adicione itens manualmente.
+      {/* Lista Principal de Itens: Agrupados por Requisito e por Item/Família */}
+      {groupedSections.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+          <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-700">Nenhum item encontrado</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Não há atividades mapeadas para o filtro selecionado. Você pode cadastrar manualmente ou voltar ao Passo 2 para enviar PDFs.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredItems.map((item) => {
-            const isExpanded = expandedItemId === item.id;
-            const dirInfo = DIRECTIVE_NAMES[item.directiveId] || DIRECTIVE_NAMES['requisito_1'];
-
-            return (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden transition hover:border-slate-300"
-              >
-                {/* Header Row */}
-                <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase tracking-wider">
-                        Item {item.categoryCode}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-500 truncate">
-                        {dirInfo?.title.split('-')[0]}
-                      </span>
-                      {item.isPriorToPublicService ? (
-                        <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
-                          <ShieldAlert className="h-3 w-3 text-rose-600" /> Anterior ao Ingresso (Não Pontua)
-                        </span>
-                      ) : item.complianceStatus === 'valid' ? (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-semibold flex items-center gap-1 border border-emerald-200">
-                          <CheckCircle className="h-3 w-3" /> Válido
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-semibold flex items-center gap-1 border border-amber-200">
-                          <AlertTriangle className="h-3 w-3" /> Requer Ajuste
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-sm font-bold leading-snug ${item.isPriorToPublicService ? 'text-slate-600 line-through' : 'text-slate-900'}`}>{item.title}</h3>
-                      <button
-                        type="button"
-                        onClick={() => copyFieldText(item.title, item.id + '_title')}
-                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition shrink-0 cursor-pointer"
-                        title="Copiar Título do Item"
-                      >
-                        {copiedFieldKey === item.id + '_title' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                      <span>Emissor: <strong className="text-slate-700">{item.issuer}</strong></span>
-                      {item.dataDocumento && (
-                        <span className="text-amber-800 font-medium">Data Doc: <strong>{item.dataDocumento}</strong></span>
-                      )}
-                      {item.workloadHours && (
-                        <span>Carga Horária: <strong className="text-slate-700">{item.workloadHours}h</strong></span>
-                      )}
-                      {item.startDate && (
-                        <span>Período: <strong className="text-slate-700">{item.startDate} {item.endDate ? `a ${item.endDate}` : ''}</strong></span>
-                      )}
-                    </div>
+        <div className="space-y-8">
+          {groupedSections.map((section) => (
+            <div key={section.directive.id} className="space-y-4">
+              {/* Cabeçalho do Requisito */}
+              <div className="flex items-center justify-between border-b-2 border-[#132247] pb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-[#132247] text-[#EAA816] flex items-center justify-center text-xs font-black">
+                    {section.directive.roman}
                   </div>
-
-                  {/* Score & Main Quick Actions */}
-                  <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
-                    <div className="text-left md:text-right">
-                      <span className="text-[10px] uppercase text-slate-400 block font-semibold">Pontuação</span>
-                      {item.isPriorToPublicService ? (
-                        <div>
-                          <span className="text-sm font-bold text-slate-400 line-through">
-                            {item.totalScore.toFixed(1)} pts
-                          </span>
-                          <span className="text-[11px] font-black text-rose-600 block">
-                            0.0 pts (Excluído)
-                          </span>
-                        </div>
-                      ) : (
-                        <div>
-                          <span className="text-base font-black text-indigo-900">
-                            {item.totalScore.toFixed(1)} <span className="text-xs font-normal text-slate-500">pts</span>
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">
-                            ({item.quantity} x {item.unitPoints} pt)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-1.5">
-                      {/* Copy Calculator Specs */}
-                      <button
-                        type="button"
-                        onClick={() => handleCopyParams(item)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 border ${
-                          copiedId === item.id
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 border-slate-200'
-                        }`}
-                        title="Copiar dados para a Calculadora RSC"
-                      >
-                        {copiedId === item.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5 text-indigo-600" />}
-                        <span>{copiedId === item.id ? 'Copiado!' : 'Copiar Dados'}</span>
-                      </button>
-
-                      {/* Expand Details */}
-                      <button
-                        type="button"
-                        onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
-                        className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                        title="Ver Justificativa e Detalhes"
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                    </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#132247]">
+                      {section.directive.name}: {section.directive.desc}
+                    </h3>
                   </div>
                 </div>
+                <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200">
+                  {section.categories.reduce((acc, c) => acc + c.items.length, 0)} comprovante(s)
+                </span>
+              </div>
 
-                {/* Expanded Details Section */}
-                {isExpanded && (
-                  <div className="p-4 md:p-5 bg-slate-50 border-t border-slate-200 space-y-4">
-                    {/* Alerta de Documento Anterior ao Ingresso no Serviço Público */}
-                    {item.isPriorToPublicService && (
-                      <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl text-xs text-rose-900 flex items-start gap-3 shadow-2xs">
-                        <ShieldAlert className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                          <strong className="text-rose-950 font-bold block text-sm">
-                            Documento Desconsiderado dos Cálculos (Anterior ao Ingresso)
-                          </strong>
-                          <p className="text-rose-900 leading-relaxed text-xs">
-                            {item.dateValidationReason || `A data deste documento (${item.effectiveDocumentDate || item.dataDocumento || 'data anterior'}) é anterior ao seu ingresso no serviço público (${formatDateDisplay(entryDate) || 'não configurada'}).`}
-                          </p>
-                          <p className="text-[11px] text-rose-800 font-medium">
-                            ⚖️ <strong>Regra Regulatória:</strong> Pelo regulamento do RSC-PCCTAE, apenas documentos e atividades exercidas a partir do ingresso no serviço público possuem validade probatória para pontuação.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Category Title */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 text-xs flex items-center justify-between gap-3">
-                      <div>
-                        <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider">
-                          Categoria da Tabela Oficial do RSC (Anexo I a VI)
+              {/* Categorias / Famílias dentro deste Requisito */}
+              <div className="space-y-4">
+                {section.categories.map((catGroup) => (
+                  <div
+                    key={catGroup.categoryCode}
+                    className={`rounded-2xl border transition shadow-xs overflow-hidden ${
+                      catGroup.isFamily
+                        ? 'border-indigo-300 bg-indigo-50/20'
+                        : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    {/* Cabeçalho do Item / Critério da Tabela */}
+                    <div className="bg-slate-100/90 border-b border-slate-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-[#132247] text-white text-xs font-black px-2.5 py-0.5 rounded-md">
+                          Item {catGroup.categoryCode}
                         </span>
-                        <p className="font-bold text-slate-900 mt-0.5 text-sm">
-                          {item.categoryCode} - {item.categoryName}
-                        </p>
-                        <p className="text-slate-500 text-[11px] mt-0.5">
-                          Base Regulamentar: <strong className="text-slate-700">{item.regulatoryBasis}</strong>
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => copyFieldText(`${item.categoryCode} - ${item.categoryName}`, item.id + '_cat')}
-                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition flex items-center gap-1 shrink-0 cursor-pointer"
-                        title="Copiar Categoria"
-                      >
-                        {copiedFieldKey === item.id + '_cat' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                        <span>{copiedFieldKey === item.id + '_cat' ? 'Copiado!' : 'Copiar'}</span>
-                      </button>
-                    </div>
+                        <span className="font-bold text-xs text-slate-900">
+                          {catGroup.categoryName}
+                        </span>
 
-                    {/* Dados Específicos do Documento (Solicitados pelo Usuário) */}
-                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-xs space-y-2.5">
-                      <h4 className="font-bold text-indigo-950 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                        <FileText className="h-4 w-4 text-indigo-600" />
-                        Dados de Identificação do Documento em PDF
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-                        {/* Número SEI */}
-                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Número de Identificação (SEI)</span>
-                            <span className="font-bold text-slate-800 text-xs block truncate">{item.numeroIdentificacaoSei || 'Não informado'}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyFieldText(item.numeroIdentificacaoSei || '', item.id + '_sei')}
-                            disabled={!item.numeroIdentificacaoSei}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition shrink-0 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent"
-                            title="Copiar Número SEI"
-                          >
-                            {copiedFieldKey === item.id + '_sei' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-
-                        {/* Órgão / Unidade Emissora */}
-                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Órgão / Unidade Emissora</span>
-                            <span className="font-bold text-slate-800 text-xs block truncate">{item.orgaoEmissor || item.issuer || 'UFCG'}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyFieldText(item.orgaoEmissor || item.issuer || 'UFCG', item.id + '_emissor')}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition shrink-0 cursor-pointer"
-                            title="Copiar Órgão Emissor"
-                          >
-                            {copiedFieldKey === item.id + '_emissor' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-
-                        {/* Data do Documento */}
-                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Data do Documento</span>
-                            <span className="font-bold text-slate-800 text-xs block truncate">{item.dataDocumento || 'Não informada'}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyFieldText(item.dataDocumento || '', item.id + '_data')}
-                            disabled={!item.dataDocumento}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition shrink-0 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent"
-                            title="Copiar Data do Documento"
-                          >
-                            {copiedFieldKey === item.id + '_data' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-
-                        {/* Período de Vigência */}
-                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Período de Vigência</span>
-                            <span className="font-bold text-slate-800 text-xs block truncate">{item.periodoVigencia || 'Não aplicável'}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyFieldText(item.periodoVigencia || '', item.id + '_vigencia')}
-                            disabled={!item.periodoVigencia}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition shrink-0 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent"
-                            title="Copiar Período de Vigência"
-                          >
-                            {copiedFieldKey === item.id + '_vigencia' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-
-                        {/* Finalidade do Documento */}
-                        <div className="bg-white p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs md:col-span-2 flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Finalidade do Documento</span>
-                            <span className="font-semibold text-slate-800 text-xs block">{item.finalidadeDocumento || 'Comprovação das atividades para pontuação de RSC'}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyFieldText(item.finalidadeDocumento || 'Comprovação das atividades para pontuação de RSC', item.id + '_finalidade')}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition shrink-0 cursor-pointer"
-                            title="Copiar Finalidade"
-                          >
-                            {copiedFieldKey === item.id + '_finalidade' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Trecho Comprobatório Exato (Grounding Rígido) */}
-                    {item.trechoComprobatorioExato && (
-                      <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-amber-950 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                            <Quote className="h-3.5 w-3.5 text-amber-600" />
-                            Trecho Comprobatório Exato (Citação Direta do Documento)
+                        {catGroup.isFamily && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-bold border border-indigo-200">
+                            <Layers className="h-3 w-3 text-indigo-600" />
+                            Família com {catGroup.items.length} comprovantes unidos
                           </span>
+                        )}
+                      </div>
+
+                      {/* Ações da Família (Unir Textos Complementares A, B e C) */}
+                      {catGroup.isFamily && (
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
-                            onClick={() => copyFieldText(item.trechoComprobatorioExato || '', item.id + '_trecho')}
-                            className="px-2 py-0.5 text-[10px] font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded transition flex items-center gap-1 shrink-0 cursor-pointer"
+                            onClick={() => setFamilyModalItems(catGroup.items)}
+                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                            title="Unir textos complementares A, B e C de toda a família"
                           >
-                            {copiedFieldKey === item.id + '_trecho' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                            <span>{copiedFieldKey === item.id + '_trecho' ? 'Copiado!' : 'Copiar Citação'}</span>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Unir Textos A, B e C da Família</span>
                           </button>
                         </div>
-                        <p className="font-mono text-slate-800 text-[11px] bg-white p-2.5 rounded-lg border border-amber-200/60 leading-relaxed italic">
-                          "{item.trechoComprobatorioExato}"
-                        </p>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
-                    {/* Justificativa Fundamentada Geral */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <FileText className="h-3.5 w-3.5 text-indigo-600" />
-                          Justificativa Fundamentada Geral (Processo SEI)
-                        </label>
+                    {/* Lista de Comprovantes deste Critério */}
+                    <div className="divide-y divide-slate-100">
+                      {catGroup.items.map((item) => {
+                        const isExpanded = expandedItemId === item.id;
+                        const isCompleted = !!item.isCompleted;
 
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => handleTriggerRegen(item)}
-                            disabled={loadingRegenId === item.id}
-                            className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition flex items-center gap-1 cursor-pointer"
-                          >
-                            <RefreshCw className={`h-3 w-3 ${loadingRegenId === item.id ? 'animate-spin' : ''}`} />
-                            <span>Regerar com IA</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleCopyJustification(item)}
-                            className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition flex items-center gap-1 cursor-pointer ${
-                              copiedJustificationId === item.id
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-slate-800 text-white hover:bg-slate-700'
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 transition ${
+                              isCompleted
+                                ? 'bg-emerald-50/30'
+                                : 'bg-white hover:bg-slate-50/80'
                             }`}
                           >
-                            {copiedJustificationId === item.id ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              {/* Checkbox de Concluído + Detalhes Principais */}
+                              <div className="flex items-start gap-3 min-w-0 flex-1">
+                                {/* Checkbox de Conclusão / Verificado */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleCompleted(item)}
+                                  className="mt-0.5 text-slate-400 hover:text-emerald-600 transition cursor-pointer shrink-0"
+                                  title={isCompleted ? 'Desmarcar como concluído' : 'Marcar como concluído'}
+                                >
+                                  {isCompleted ? (
+                                    <CheckSquare className="h-5 w-5 text-emerald-600" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-slate-400 hover:text-slate-600" />
+                                  )}
+                                </button>
+
+                                <div className="space-y-1.5 min-w-0 flex-1">
+                                  {/* Nome do Arquivo Analisado BEM DESTACADO (Item 1 solicitado pelo usuário) */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-bold border border-slate-300">
+                                      <FileText className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                                      <span className="truncate max-w-[260px] sm:max-w-md">
+                                        Arquivo: {item.documentName || 'Documento Comprobatório'}
+                                      </span>
+                                    </span>
+
+                                    {item.isFamilyConsolidated && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
+                                        <CheckCircle className="h-3 w-3 text-indigo-600" /> Textos A, B e C Unidos
+                                      </span>
+                                    )}
+
+                                    {item.isPriorToPublicService ? (
+                                      <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-semibold flex items-center gap-1 border border-rose-200">
+                                        <ShieldAlert className="h-3 w-3 text-rose-600" /> Anterior ao Ingresso (Não Pontua)
+                                      </span>
+                                    ) : item.complianceStatus === 'valid' ? (
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-semibold flex items-center gap-1 border border-emerald-200">
+                                        <CheckCircle className="h-3 w-3" /> Válido
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-semibold flex items-center gap-1 border border-amber-200">
+                                        <AlertTriangle className="h-3 w-3" /> Requer Ajuste
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Título da Atividade */}
+                                  <div className="flex items-center gap-2">
+                                    <h4
+                                      className={`text-sm font-bold leading-snug ${
+                                        item.isPriorToPublicService
+                                          ? 'text-slate-500 line-through'
+                                          : 'text-slate-900'
+                                      }`}
+                                    >
+                                      {item.title}
+                                    </h4>
+                                    <button
+                                      type="button"
+                                      onClick={() => copyFieldText(item.title, item.id + '_title')}
+                                      className="p-1 text-slate-400 hover:text-indigo-600 rounded transition shrink-0 cursor-pointer"
+                                      title="Copiar Título"
+                                    >
+                                      {copiedFieldKey === item.id + '_title' ? (
+                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+
+                                  {/* Metadados: Emissor, Data, Carga Horária, Processo SEI */}
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                                    <span>
+                                      Emissor: <strong className="text-slate-700">{item.issuer}</strong>
+                                    </span>
+                                    {item.dataDocumento && (
+                                      <span className="text-amber-800 font-medium">
+                                        Data: <strong>{item.dataDocumento}</strong>
+                                      </span>
+                                    )}
+                                    {item.workloadHours && (
+                                      <span>
+                                        Carga: <strong className="text-slate-700">{item.workloadHours}h</strong>
+                                      </span>
+                                    )}
+                                    {item.numeroIdentificacaoSei && (
+                                      <span>
+                                        Identificação/SEI: <strong className="text-slate-700">{item.numeroIdentificacaoSei}</strong>
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Pontuação & Ações */}
+                              <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                                <div className="text-left md:text-right">
+                                  <span className="text-[10px] uppercase text-slate-400 block font-semibold">
+                                    Pontuação
+                                  </span>
+                                  {item.isPriorToPublicService ? (
+                                    <div>
+                                      <span className="text-sm font-bold text-slate-400 line-through">
+                                        {item.totalScore.toFixed(1)} pts
+                                      </span>
+                                      <span className="text-[10px] font-bold text-rose-600 block">
+                                        0.0 pts (Excluído)
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <span className="text-base font-black text-indigo-900">
+                                        {item.totalScore.toFixed(1)}{' '}
+                                        <span className="text-xs font-normal text-slate-500">pts</span>
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 block">
+                                        ({item.quantity} x {item.unitPoints} pt)
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center space-x-1.5">
+                                  {/* Botão de Trecho Comprobatório Exato (Item 4 solicitado pelo usuário: abre modal) */}
+                                  {item.trechoComprobatorioExato && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setEvidenceModalItem(item)}
+                                      className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center gap-1 cursor-pointer"
+                                      title="Ver citação literal extraída do PDF em janela modal"
+                                    >
+                                      <Quote className="h-3.5 w-3.5 text-amber-600" />
+                                      <span>Ver Citação</span>
+                                    </button>
+                                  )}
+
+                                  {/* Copiar Parâmetros da Calculadora */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyParams(item)}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 border ${
+                                      copiedId === item.id
+                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 border-slate-200'
+                                    }`}
+                                    title="Copiar dados para a Calculadora RSC"
+                                  >
+                                    {copiedId === item.id ? (
+                                      <Check className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5 text-indigo-600" />
+                                    )}
+                                    <span>{copiedId === item.id ? 'Copiado!' : 'Copiar Dados'}</span>
+                                  </button>
+
+                                  {/* Desconsiderar / Mover para Caixa Vermelha (Item 5 solicitado pelo usuário) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleDiscarded(item)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Mover item para Caixa Vermelha (Desconsiderados no final da tela)"
+                                  >
+                                    <Ban className="h-4 w-4" />
+                                  </button>
+
+                                  {/* Editar */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsEditingItem(item)}
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                    title="Editar Item"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </button>
+
+                                  {/* Excluir */}
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteItem(item.id)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                    title="Excluir Definitivamente"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+
+                                  {/* Expandir Detalhes */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                                    className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                    title="Ver Textos e Justificativas"
+                                  >
+                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Conteúdo Expandido (Textos Complementares A, B, C e Justificativa) */}
+                            {isExpanded && (
+                              <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 text-xs bg-slate-50/50 p-4 rounded-xl">
+                                {/* Trecho Comprobatório Exato: Apenas botão para abrir em janela modal conforme item 4 */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 text-amber-900">
+                                    <Quote className="h-4 w-4 text-amber-600 shrink-0" />
+                                    <span>
+                                      <strong>Trecho Comprobatório Exato:</strong> Oculto no card para limpeza visual. Disponível para conferência em janela modal.
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEvidenceModalItem(item)}
+                                    className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-2xs"
+                                  >
+                                    Abrir em Janela
+                                  </button>
+                                </div>
+
+                                {/* Justificativa Fundamentada Geral */}
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                      <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                                      Justificativa Fundamentada Geral (Processo SEI)
+                                    </label>
+                                    <div className="flex items-center space-x-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleTriggerRegen(item)}
+                                        disabled={loadingRegenId === item.id}
+                                        className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <RefreshCw className={`h-3 w-3 ${loadingRegenId === item.id ? 'animate-spin' : ''}`} />
+                                        <span>Regerar com IA</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyJustification(item)}
+                                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition flex items-center gap-1 cursor-pointer ${
+                                          copiedJustificationId === item.id
+                                            ? 'bg-emerald-600 text-white'
+                                            : 'bg-slate-800 text-white hover:bg-slate-700'
+                                        }`}
+                                      >
+                                        {copiedJustificationId === item.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                        <span>{copiedJustificationId === item.id ? 'Copiado!' : 'Copiar Texto'}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="p-3.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 leading-relaxed font-serif whitespace-pre-line shadow-2xs">
+                                    {item.justificationText || 'Sem justificativa gerada.'}
+                                  </div>
+                                </div>
+
+                                {/* Textos Complementares A, B e C */}
+                                <div className="space-y-3 pt-2 border-t border-slate-200">
+                                  <h5 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center justify-between">
+                                    <span>Textos Complementares Formato SEI</span>
+                                    {catGroup.isFamily && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setFamilyModalItems(catGroup.items)}
+                                        className="text-indigo-600 hover:text-indigo-800 font-bold underline"
+                                      >
+                                        Editar Textos da Família
+                                      </button>
+                                    )}
+                                  </h5>
+
+                                  {/* Bloco A */}
+                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[10px]">A</span>
+                                        Experiência Profissional e Individual Vinculada ao Requisito
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => copyFieldText(item.experienciaProfissionalTexto || '', item.id + '_blocoA')}
+                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        title="Copiar texto A"
+                                      >
+                                        {copiedFieldKey === item.id + '_blocoA' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                      </button>
+                                    </div>
+                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                      {item.experienciaProfissionalTexto || 'Texto não preenchido.'}
+                                    </p>
+                                  </div>
+
+                                  {/* Bloco B */}
+                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-black text-[10px]">B</span>
+                                        Diferencial da Atuação
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => copyFieldText(item.diferencialAtuacaoTexto || '', item.id + '_blocoB')}
+                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        title="Copiar texto B"
+                                      >
+                                        {copiedFieldKey === item.id + '_blocoB' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                      </button>
+                                    </div>
+                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                      {item.diferencialAtuacaoTexto || 'Texto não preenchido.'}
+                                    </p>
+                                  </div>
+
+                                  {/* Bloco C */}
+                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[10px]">C</span>
+                                        Impacto dos Saberes no Cargo e na Instituição
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => copyFieldText(item.impactosSaberesTexto || '', item.id + '_blocoC')}
+                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        title="Copiar texto C"
+                                      >
+                                        {copiedFieldKey === item.id + '_blocoC' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                      </button>
+                                    </div>
+                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                      {item.impactosSaberesTexto || 'Texto não preenchido.'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             )}
-                            <span>{copiedJustificationId === item.id ? 'Copiado!' : 'Copiar Texto'}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 leading-relaxed font-serif whitespace-pre-line shadow-2xs">
-                        {item.justificationText || 'Sem justificativa gerada.'}
-                      </div>
-                    </div>
-
-                    {/* Três Blocos de Texto OBRIGATÓRIOS (A, B, C) */}
-                    <div className="space-y-3 pt-2 border-t border-slate-200">
-                      <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center justify-between">
-                        <span>Textos Complementares Fundamentados (Conforme GEM RSC)</span>
-                        <span className="text-[10px] text-slate-500 font-normal">Formatados para formulário SEI</span>
-                      </h4>
-
-                      {/* Bloco A: Experiência Profissional */}
-                      <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[10px]">A</span>
-                            Experiência Profissional e Individual Vinculada ao Requisito
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-mono font-bold ${
-                              (item.experienciaProfissionalTexto?.length || 0) > 1500 ? 'text-rose-600' : 'text-slate-400'
-                            }`}>
-                              {item.experienciaProfissionalTexto?.length || 0} / 1.500 caract.
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(item.experienciaProfissionalTexto || '');
-                                setCopiedId(item.id + '_A');
-                                setTimeout(() => setCopiedId(null), 2000);
-                              }}
-                              className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedId === item.id + '_A' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                              <span>{copiedId === item.id + '_A' ? 'Copiado!' : 'Copiar A'}</span>
-                            </button>
                           </div>
-                        </div>
-                        <p className="text-xs text-slate-700 font-serif leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200/80 whitespace-pre-line">
-                          {item.experienciaProfissionalTexto || 'Aguardando geração do texto de experiência profissional.'}
-                        </p>
-                      </div>
-
-                      {/* Bloco B: Diferencial da Atuação */}
-                      <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[10px]">B</span>
-                            Diferencial da Atuação
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-mono font-bold ${
-                              (item.diferencialAtuacaoTexto?.length || 0) > 600 ? 'text-rose-600' : 'text-slate-400'
-                            }`}>
-                              {item.diferencialAtuacaoTexto?.length || 0} / 600 caract.
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(item.diferencialAtuacaoTexto || '');
-                                setCopiedId(item.id + '_B');
-                                setTimeout(() => setCopiedId(null), 2000);
-                              }}
-                              className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedId === item.id + '_B' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                              <span>{copiedId === item.id + '_B' ? 'Copiado!' : 'Copiar B'}</span>
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-700 font-serif leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200/80 whitespace-pre-line">
-                          {item.diferencialAtuacaoTexto || 'Aguardando geração do texto de diferencial da atuação.'}
-                        </p>
-                      </div>
-
-                      {/* Bloco C: Impacto dos Saberes */}
-                      <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[10px]">C</span>
-                            Impacto dos Saberes no Cargo e na Instituição
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-mono font-bold ${
-                              (item.impactosSaberesTexto?.length || 0) > 600 ? 'text-rose-600' : 'text-slate-400'
-                            }`}>
-                              {item.impactosSaberesTexto?.length || 0} / 600 caract.
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(item.impactosSaberesTexto || '');
-                                setCopiedId(item.id + '_C');
-                                setTimeout(() => setCopiedId(null), 2000);
-                              }}
-                              className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedId === item.id + '_C' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                              <span>{copiedId === item.id + '_C' ? 'Copiado!' : 'Copiar C'}</span>
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-700 font-serif leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200/80 whitespace-pre-line">
-                          {item.impactosSaberesTexto || 'Aguardando geração do texto de impacto dos saberes.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Compliance Notes */}
-                    {item.complianceNotes && item.complianceNotes.length > 0 && (
-                      <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
-                        <span className="font-bold block">Notas de Conformidade / Checklist Documental:</span>
-                        <ul className="list-disc pl-4 space-y-0.5 text-amber-800">
-                          {item.complianceNotes.map((note, idx) => (
-                            <li key={idx}>{note}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Actions: Edit or Delete Item */}
-                    <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200/80">
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingItem(item)}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition flex items-center gap-1"
-                      >
-                        <Edit2 className="h-3.5 w-3.5 text-slate-600" />
-                        <span>Editar Item</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDeleteItem(item.id)}
-                        className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition flex items-center gap-1"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-rose-600" />
-                        <span>Excluir</span>
-                      </button>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Modal for Editing Item */}
+      {/* Caixa Vermelha: Itens Desconsiderados / Rejeitados no Final da Tela (Item 5 solicitado pelo usuário) */}
+      {discardedItems.length > 0 && (
+        <div className="bg-rose-50/80 border-2 border-rose-300 rounded-2xl p-5 shadow-xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-rose-200 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-rose-200 text-rose-800 flex items-center justify-center shrink-0">
+                <Ban className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                  Caixa de Itens Desconsiderados / Rejeitados ({discardedItems.length})
+                  <span className="bg-rose-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
+                    Excluídos do Cálculo
+                  </span>
+                </h3>
+                <p className="text-xs text-rose-800 mt-0.5">
+                  Itens marcados para descarte. Eles não pontuam na Calculadora RSC, mas podem ser restaurados a qualquer momento clicando em "Restaurar".
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {discardedItems.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white border border-rose-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                      {item.categoryCode}
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 line-through">
+                      {item.title}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 flex items-center gap-2">
+                    <span>Arquivo: <strong>{item.documentName || 'Documento Anexo'}</strong></span>
+                    <span>•</span>
+                    <span>Pontos Desconsiderados: <strong className="text-rose-700">{item.totalScore.toFixed(1)} pts</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleDiscarded(item)}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Restaurar para Lista Ativa</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteItem(item.id)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    title="Excluir Definitivamente"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Item */}
       {isEditingItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-slate-900 pb-2 border-b border-slate-100">
-              Editar Item da Calculadora RSC
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-sm font-bold text-slate-900 pb-2 border-b border-slate-200">
+              Editar Dados do Item na Calculadora RSC
             </h3>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
@@ -1191,106 +1240,28 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                 <label className="block font-semibold text-slate-700 mb-1">Título da Atividade</label>
                 <input
                   type="text"
-                  required
                   value={isEditingItem.title}
                   onChange={(e) => setIsEditingItem({ ...isEditingItem, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                 />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Órgão Emissor</label>
-                <input
-                  type="text"
-                  required
-                  value={isEditingItem.issuer}
-                  onChange={(e) => setIsEditingItem({ ...isEditingItem, issuer: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Requisito</label>
-                  <select
-                    value={isEditingItem.directiveId}
-                    onChange={(e) =>
-                      setIsEditingItem({ ...isEditingItem, directiveId: e.target.value as RSCDirectiveId })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  >
-                    <option value="requisito_1">Requisito I (GTs/Comissões)</option>
-                    <option value="requisito_2">Requisito II (Projetos/Gestão)</option>
-                    <option value="requisito_3">Requisito III (Premiações)</option>
-                    <option value="requisito_4">Requisito IV (Resp. Técnica)</option>
-                    <option value="requisito_5">Requisito V (Funções CD/FG)</option>
-                    <option value="requisito_6">Requisito VI (Produção/Difusão)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Código Categoria</label>
-                  <input
-                    type="text"
-                    value={isEditingItem.categoryCode}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, categoryCode: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Campos de Datas e Documento SEI */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
-                  <input
-                    type="text"
-                    placeholder="DD/MM/AAAA ou AAAA-MM-DD"
-                    value={isEditingItem.dataDocumento || ''}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, dataDocumento: e.target.value })}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Data Início</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 01/01/2023"
-                    value={isEditingItem.startDate || ''}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, startDate: e.target.value })}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Data Fim</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 31/12/2023"
-                    value={isEditingItem.endDate || ''}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, endDate: e.target.value })}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-xs"
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Nº do Documento / SEI</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Órgão Emissor</label>
                   <input
                     type="text"
-                    placeholder="Ex: Portaria Reitoria nº 123/2024"
-                    value={isEditingItem.numeroIdentificacaoSei || ''}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, numeroIdentificacaoSei: e.target.value })}
+                    value={isEditingItem.issuer}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, issuer: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Período de Vigência</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
                   <input
                     type="text"
-                    placeholder="Ex: 2 anos"
-                    value={isEditingItem.periodoVigencia || ''}
-                    onChange={(e) => setIsEditingItem({ ...isEditingItem, periodoVigencia: e.target.value })}
+                    value={isEditingItem.dataDocumento || ''}
+                    onChange={(e) => setIsEditingItem({ ...isEditingItem, dataDocumento: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -1319,7 +1290,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                   <label className="block font-semibold text-slate-700 mb-1">Quantidade</label>
                   <input
                     type="number"
-                    step="0.5"
+                    step="1"
                     value={isEditingItem.quantity}
                     onChange={(e) => {
                       const qty = parseFloat(e.target.value) || 0;
@@ -1364,14 +1335,18 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         </div>
       )}
 
-      {/* Next Step Button */}
-      <div className="flex justify-end pt-4">
+      {/* Botão de Avançar para o Passo Final */}
+      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+        <span className="text-xs text-slate-500">
+          {completedCount} de {totalActiveCount} itens conferidos ({completionPercentage}%)
+        </span>
         <button
           type="button"
           onClick={onNextStep}
-          className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-sm hover:shadow transition cursor-pointer"
+          className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md transition cursor-pointer flex items-center gap-2"
         >
-          Avançar para Relatório Final e Conformidade
+          <span>Avançar para Relatório Final e Conformidade</span>
+          <CheckCircle className="h-4 w-4" />
         </button>
       </div>
     </div>

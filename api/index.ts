@@ -38,14 +38,15 @@ function getGeminiClient(req?: express.Request): GoogleGenAI {
 }
 
 // Helper function to execute Gemini requests with fallback models and retry on transient errors (429 / 503)
+// Prioriza o modelo mais econômico e rápido (gemini-3.1-flash-lite), com fallback sequencial para gemini-3.8-flash e gemini-flash-latest
 async function callGeminiWithFallback(
   ai: GoogleGenAI,
   params: {
     contents: any;
     config?: any;
   }
-) {
-  const models = ['gemini-3.6-flash', 'gemini-flash-latest'];
+): Promise<{ response: any; modelUsed: string }> {
+  const models = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
   const maxRetriesPerModel = 3;
   let lastError: any = null;
 
@@ -53,12 +54,13 @@ async function callGeminiWithFallback(
     const model = models[i];
     for (let attempt = 0; attempt < maxRetriesPerModel; attempt++) {
       try {
+        console.log(`[Gemini API] Executando requisição com o modelo ${model} (tentativa ${attempt + 1}/${maxRetriesPerModel})...`);
         const response = await ai.models.generateContent({
           model,
           contents: params.contents,
           config: params.config,
         });
-        return response;
+        return { response, modelUsed: model };
       } catch (err: any) {
         lastError = err;
         const errString = String(err?.message || err);
@@ -87,13 +89,14 @@ async function callGeminiWithFallback(
             continue;
           }
         } else {
-          // Non-transient error: stop retrying this model
+          // Non-transient error: stop retrying this model and advance to next fallback
           break;
         }
       }
     }
     // Pause briefly before switching to fallback model if transient error persisted
     if (i < models.length - 1) {
+      console.log(`[Gemini API] Alternando para o próximo modelo de fallback: ${models[i + 1]}...`);
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
@@ -165,7 +168,7 @@ Para cada documento, preencha obrigatoriamente:
       },
     };
 
-    const response = await callGeminiWithFallback(ai, {
+    const { response, modelUsed } = await callGeminiWithFallback(ai, {
       contents: { parts: [pdfPart, { text: promptText }] },
       config: {
         systemInstruction,
@@ -279,6 +282,7 @@ Para cada documento, preencha obrigatoriamente:
       motivo_rejeicao: parsed.motivo_rejeicao || '',
       items: parsed.documento_valido === false ? [] : (parsed.items || []),
       summary: parsed.summary || 'Análise concluída.',
+      modelUsed: modelUsed || 'gemini-3.1-flash-lite',
     });
   } catch (error: any) {
     console.error('Erro na análise de PDF com Gemini:', error);
@@ -351,7 +355,7 @@ ESTRUTURA OBRIGATÓRIA DO TEXTO A SER GERADO:
 
 Retorne em formato JSON com o campo "demonstracaoTexto" contendo o texto completo e bem formatado em parágrafos claros (entre 400 e 800 palavras).`;
 
-    const response = await callGeminiWithFallback(ai, {
+    const { response } = await callGeminiWithFallback(ai, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -416,7 +420,7 @@ Retorne os seguintes campos em JSON:
 3. diferencialAtuacaoTexto: B) Diferencial da Atuação (Destaque de relevância, inovação e proatividade. MÁXIMO DE 600 CARACTERES).
 4. impactosSaberesTexto: C) Impacto dos Saberes no Cargo e na Instituição (Valor e eficiência gerados para a UFCG. MÁXIMO DE 600 CARACTERES).`;
 
-    const response = await callGeminiWithFallback(ai, {
+    const { response } = await callGeminiWithFallback(ai, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -462,6 +466,103 @@ Retorne os seguintes campos em JSON:
 
     return res.status(500).json({
       error: userMsg,
+      details: error.message || String(error),
+    });
+  }
+});
+
+// Endpoint: Consolidar Textos Complementares A, B e C para itens da mesma Família (Requisito + Item)
+router.post('/consolidate-family-texts', async (req, res) => {
+  try {
+    const { items, userProfile, categoryCode, categoryName, directiveId } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Nenhum item fornecido para consolidação.' });
+    }
+
+    const ai = getGeminiClient(req);
+
+    const itemsSummary = items
+      .map(
+        (it, idx) =>
+          `[Documento ${idx + 1}] Título: ${it.title} | Emissor: ${it.orgaoEmissor || it.issuer} | Vigência/Data: ${it.periodoVigencia || it.dataDocumento || 'N/A'} | Carga Horária: ${it.workloadHours || 'N/A'}h | Texto A original: ${it.experienciaProfissionalTexto || 'N/A'} | Texto B original: ${it.diferencialAtuacaoTexto || 'N/A'} | Texto C original: ${it.impactosSaberesTexto || 'N/A'}`
+      )
+      .join('\n\n');
+
+    const prompt = `Você é um Consultor Especialista em RSC-PCCTAE na UFCG.
+O servidor possui ${items.length} comprovantes/documentos pertencentes à MESMA FAMÍLIA (Requisito: ${directiveId}, Critério/Item: ${categoryCode} - ${categoryName}).
+Sua missão é realizar a ANÁLISE e UNIFICAÇÃO dos TEXTOS COMPLEMENTARES A, B e C, unindo todos os comprovantes desta mesma família de forma coesa, formal e sem repetições redundantes, respeitando rigorosamente os limites máximos de caracteres exigidos pelo processo SEI da UFCG:
+
+DADOS DO SERVIDOR:
+- Nome: ${userProfile?.nomeCompleto || 'Servidor Público'}
+- Cargo: ${userProfile?.cargo || 'Técnico-Administrativo em Educação'} (${userProfile?.nivelClassificacao || 'E'})
+- Lotação: ${userProfile?.lotacao || 'UFCG'}
+- RSC Almejado: ${userProfile?.rscAlmejado || 'RSC-PCCTAE I'}
+
+DOCUMENTOS E COMPROVANTES DA MESMA FAMÍLIA:
+${itemsSummary}
+
+REQUISITOS ESTRITOS DOS TEXTOS:
+1. experienciaProfissionalTexto (Bloco A): A) Experiência Profissional e Individual Vinculada ao Requisito.
+   - Deve sintetizar cronologicamente todas as atividades e comprovantes listados, demonstrando a evolução contínua da atuação do servidor no critério ${categoryCode}.
+   - LIMITE ABSOLUTO: MÁXIMO DE 1.500 CARACTERES.
+
+2. diferencialAtuacaoTexto (Bloco B): B) Diferencial da Atuação.
+   - Deve evidenciar como o conjunto dessas atividades gerou excelência técnica, liderança, inovação ou proatividade funcional.
+   - LIMITE ABSOLUTO: MÁXIMO DE 600 CARACTERES.
+
+3. impactosSaberesTexto (Bloco C): C) Impacto dos Saberes no Cargo e na Instituição.
+   - Deve sintetizar os reflexos positivos gerados na rotina, ensino, pesquisa, extensão ou governança pública da instituição.
+   - LIMITE ABSOLUTO: MÁXIMO DE 600 CARACTERES.
+
+Retorne em formato JSON estrito conforme o schema.`;
+
+    const { response } = await callGeminiWithFallback(ai, {
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            experienciaProfissionalTexto: {
+              type: Type.STRING,
+              description: 'Bloco A unificado (máximo 1.500 caracteres)',
+            },
+            diferencialAtuacaoTexto: {
+              type: Type.STRING,
+              description: 'Bloco B unificado (máximo 600 caracteres)',
+            },
+            impactosSaberesTexto: {
+              type: Type.STRING,
+              description: 'Bloco C unificado (máximo 600 caracteres)',
+            },
+            justificationText: {
+              type: Type.STRING,
+              description: 'Justificativa fundamentada unificada',
+            },
+          },
+          required: [
+            'experienciaProfissionalTexto',
+            'diferencialAtuacaoTexto',
+            'impactosSaberesTexto',
+          ],
+        },
+      },
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+
+    return res.json({
+      success: true,
+      experienciaProfissionalTexto: parsed.experienciaProfissionalTexto || '',
+      diferencialAtuacaoTexto: parsed.diferencialAtuacaoTexto || '',
+      impactosSaberesTexto: parsed.impactosSaberesTexto || '',
+      justificationText: parsed.justificationText || '',
+    });
+  } catch (error: any) {
+    console.error('Erro na consolidação de textos da família:', error);
+    return res.status(500).json({
+      error: 'Falha ao consolidar textos com a IA.',
       details: error.message || String(error),
     });
   }

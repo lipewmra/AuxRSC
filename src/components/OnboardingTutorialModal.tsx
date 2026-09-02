@@ -22,12 +22,14 @@ interface OnboardingTutorialModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenApiKeyModal: () => void;
+  onOpenIntroModal?: () => void;
 }
 
 export const OnboardingTutorialModal: React.FC<OnboardingTutorialModalProps> = ({
   isOpen,
   onClose,
   onOpenApiKeyModal,
+  onOpenIntroModal,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -44,7 +46,7 @@ export const OnboardingTutorialModal: React.FC<OnboardingTutorialModalProps> = (
 
   const handleFinish = () => {
     if (dontShowAgain) {
-      localStorage.setItem('rsc_has_seen_tutorial_v1', 'true');
+      localStorage.setItem('rsc_has_seen_tutorial_v3', 'true');
     }
     onClose();
   };
@@ -281,15 +283,32 @@ export const OnboardingTutorialModal: React.FC<OnboardingTutorialModalProps> = (
 
         {/* Footer controls */}
         <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <label className="flex items-center space-x-2 text-xs text-slate-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={dontShowAgain}
-              onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="rounded border-slate-300 text-[#132247] focus:ring-[#132247] h-4 w-4"
-            />
-            <span>Não mostrar novamente ao abrir o sistema</span>
-          </label>
+          <div className="flex items-center gap-4 flex-wrap">
+            <label className="flex items-center space-x-2 text-xs text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="rounded border-slate-300 text-[#132247] focus:ring-[#132247] h-4 w-4"
+              />
+              <span>Não mostrar novamente ao abrir o sistema</span>
+            </label>
+
+            {onOpenIntroModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenIntroModal();
+                }}
+                className="text-xs text-[#132247] hover:text-[#C28600] font-bold underline flex items-center gap-1 cursor-pointer"
+                title="Ver tela de abertura e animação"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-[#C28600]" />
+                <span>Ver Tela de Abertura</span>
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto justify-end">
             {currentStep > 0 && (

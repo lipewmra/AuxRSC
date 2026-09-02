@@ -4,12 +4,14 @@ import { Sparkles, Award, ChevronRight, X, ShieldCheck } from 'lucide-react';
 
 interface RscIntroAnimationModalProps {
   isOpen: boolean;
-  onComplete: () => void;
+  onClose: () => void;
+  onAdvanceToTutorial?: () => void;
 }
 
 export const RscIntroAnimationModal: React.FC<RscIntroAnimationModalProps> = ({
   isOpen,
-  onComplete,
+  onClose,
+  onAdvanceToTutorial,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [animationPhase, setAnimationPhase] = useState<number>(0);
@@ -24,17 +26,12 @@ export const RscIntroAnimationModal: React.FC<RscIntroAnimationModalProps> = ({
     const t2 = setTimeout(() => setAnimationPhase(2), 1200);
     const t3 = setTimeout(() => setAnimationPhase(3), 2200);
 
-    const autoFinishTimer = setTimeout(() => {
-      onComplete();
-    }, 6000);
-
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearTimeout(autoFinishTimer);
     };
-  }, [isOpen, onComplete]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -173,10 +170,11 @@ export const RscIntroAnimationModal: React.FC<RscIntroAnimationModalProps> = ({
 
         <button
           type="button"
-          onClick={onComplete}
+          onClick={onClose}
           className="absolute top-5 right-5 z-20 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-full border border-white/20 backdrop-blur-md transition flex items-center gap-1.5 cursor-pointer hover:scale-105"
+          title="Fechar tela de abertura"
         >
-          <span>Pular Animação</span>
+          <span>Fechar</span>
           <X className="h-4 w-4 text-[#EAA816]" />
         </button>
 
@@ -290,11 +288,25 @@ export const RscIntroAnimationModal: React.FC<RscIntroAnimationModalProps> = ({
               Prepare e comprove seu processo SEI do RSC com inteligência artificial e pontuação em tempo real.
             </p>
 
-            <div className="pt-2">
+            <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
               <button
                 type="button"
-                onClick={onComplete}
-                className="px-6 py-3 bg-gradient-to-r from-[#EAA816] to-[#C28600] hover:from-[#FFBF2E] hover:to-[#EAA816] text-[#132247] font-black text-xs sm:text-sm rounded-xl border border-amber-200 shadow-[0_0_20px_rgba(234,168,22,0.4)] transition hover:scale-105 cursor-pointer inline-flex items-center gap-2"
+                onClick={onClose}
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/25 transition cursor-pointer"
+              >
+                <span>Ir Direto ao Sistema</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAdvanceToTutorial) {
+                    onAdvanceToTutorial();
+                  } else {
+                    onClose();
+                  }
+                }}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#EAA816] to-[#C28600] hover:from-[#FFBF2E] hover:to-[#EAA816] text-[#132247] font-black text-xs sm:text-sm rounded-xl border border-amber-200 shadow-[0_0_20px_rgba(234,168,22,0.4)] transition hover:scale-105 cursor-pointer inline-flex items-center gap-2"
               >
                 <span>Avançar para o Tutorial</span>
                 <ChevronRight className="h-4 w-4 text-[#132247] stroke-[3]" />

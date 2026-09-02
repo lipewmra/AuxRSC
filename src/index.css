@@ -1,18 +1,10 @@
 @import "tailwindcss";
 
 @layer base {
-  /* System icons in navy blue by default */
+  /* Lucide icons inherit currentColor and stroke cleanly without dark overrides */
   svg.lucide {
-    color: #132247;
-  }
-
-  /* Icons inside solid colored badges/buttons preserve contrast */
-  .bg-navy svg.lucide,
-  button.bg-slate-900 svg.lucide,
-  button.bg-[#132247] svg.lucide,
-  .bg-[#132247] svg.lucide,
-  .bg-[#54B0EE] svg.lucide {
     color: currentColor;
+    stroke: currentColor;
   }
 }
 
