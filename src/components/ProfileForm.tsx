@@ -102,28 +102,28 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 md:p-8">
-        <div className="mb-6 pb-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-6 md:p-8 transition-colors duration-200">
+        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <User className="h-5 w-5 text-[#0B1D3A]" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <User className="h-5 w-5 text-[#0B1D3A] dark:text-[#EAA816]" />
               Dados Pessoais e Perfil Funcional para a Calculadora RSC
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Informe os dados cadastrais e o nível RSC desejado. Todas as sugestões de pontuação e textos justificativos serão personalizados para o seu perfil funcional.
             </p>
           </div>
           
           {/* RSC Target Card */}
-          <div className="bg-[#FEF0B2]/60 border-2 border-[#EAA816] rounded-xl p-3.5 text-xs shrink-0 max-w-xs shadow-2xs">
-            <div className="flex items-center space-x-2 text-[#132247] font-semibold mb-1">
-              <Award className="h-4 w-4 text-[#132247]" />
-              <span>Nível Selecionado: <strong className="text-[#C28600]">{userProfile.rscAlmejado}</strong></span>
+          <div className="bg-[#FEF0B2]/60 dark:bg-slate-800/90 border-2 border-[#EAA816] rounded-xl p-3.5 text-xs shrink-0 max-w-xs shadow-2xs">
+            <div className="flex items-center space-x-2 text-[#132247] dark:text-[#FEF0B2] font-semibold mb-1">
+              <Award className="h-4 w-4 text-[#132247] dark:text-[#EAA816]" />
+              <span>Nível Selecionado: <strong className="text-[#C28600] dark:text-[#EAA816]">{userProfile.rscAlmejado}</strong></span>
             </div>
-            <p className="text-slate-700 text-[11px] leading-relaxed">
+            <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">
               {selectedReq?.escolaridade} — {selectedReq?.equivalence}
             </p>
-            <div className="mt-2 pt-2 border-t border-[#EAA816]/40 flex items-center justify-between text-[11px] font-medium text-[#132247]">
+            <div className="mt-2 pt-2 border-t border-[#EAA816]/40 flex items-center justify-between text-[11px] font-medium text-[#132247] dark:text-[#FEF0B2]">
               <span>Pontuação Mínima:</span>
               <span className="bg-[#132247] text-[#EAA816] border border-[#EAA816] px-2 py-0.5 rounded-md font-bold">
                 {selectedReq?.minTotalScore} pontos
@@ -142,7 +142,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Nome Completo */}
             <div className="space-y-1.5 md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Nome Completo do Servidor <span className="text-rose-500">*</span>
               </label>
               <input
@@ -152,17 +152,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 onChange={handleChange}
                 required
                 placeholder="Ex: Maria da Silva Souza"
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition"
               />
             </div>
 
             {/* Cargo / Função (Autocomplete com busca nos cargos do PCCTAE) */}
             <div className="space-y-1.5 md:col-span-2 lg:col-span-2 relative" ref={cargoDropdownRef}>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Cargo / Função <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[10px] font-medium" style={{ color: '#002d85' }}>
+                <span className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400">
                   {PCCTAE_POSITIONS.length} cargos oficiais do PCCTAE
                 </span>
               </div>
@@ -179,7 +179,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   onFocus={() => setShowCargoDropdown(true)}
                   required
                   placeholder="Digite para buscar seu cargo no PCCTAE (ex: Assistente, Analista, Técnico...)"
-                  className="w-full pl-3.5 pr-14 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+                  className="w-full pl-3.5 pr-14 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
                   {userProfile.cargo && (
@@ -189,7 +189,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                         onChangeProfile({ ...userProfile, cargo: '' });
                         setShowCargoDropdown(true);
                       }}
-                      className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                       title="Limpar busca"
                       tabIndex={-1}
                     >
@@ -199,7 +199,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCargoDropdown(!showCargoDropdown)}
-                    className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                     tabIndex={-1}
                   >
                     <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showCargoDropdown ? 'rotate-180' : ''}`} />
@@ -209,12 +209,12 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
               {/* Dropdown de sugestões do PCCTAE com filtro por nível */}
               {showCargoDropdown && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-80 overflow-y-auto divide-y divide-slate-100">
+                <div className="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
                   {/* Header e Filtros por Nível */}
-                  <div className="p-2 bg-slate-50 sticky top-0 border-b border-slate-200 space-y-1.5 z-10">
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-850 sticky top-0 border-b border-slate-200 dark:border-slate-700 space-y-1.5 z-10">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
                       <span>Base de Cargos PCCTAE ({filteredPositions.length} de {PCCTAE_POSITIONS.length})</span>
-                      <span className="text-[9px] font-normal text-slate-400">Clique para escolher</span>
+                      <span className="text-[9px] font-normal text-slate-400 dark:text-slate-500">Clique para escolher</span>
                     </div>
 
                     {/* Level Filter Tabs */}
@@ -228,8 +228,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                             onClick={() => setLevelFilter(lvl)}
                             className={`px-2 py-0.5 rounded-md font-bold transition cursor-pointer ${
                               isActive
-                                ? 'bg-[#002d85] text-white shadow-2xs'
-                                : 'bg-slate-200/70 text-slate-700 hover:bg-slate-300'
+                                ? 'bg-[#002d85] dark:bg-[#132247] text-white border border-[#EAA816] shadow-2xs'
+                                : 'bg-slate-200/70 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
                             }`}
                           >
                             {lvl === 'TODOS' ? 'Todos' : lvl === 'EBTT' ? 'EBTT' : `Nível ${lvl}`}
@@ -240,10 +240,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   </div>
 
                   {filteredPositions.length === 0 ? (
-                    <div className="p-4 text-xs text-slate-500 text-center">
+                    <div className="p-4 text-xs text-slate-500 dark:text-slate-400 text-center">
                       Nenhum cargo localizado com &quot;{userProfile.cargo}&quot;{levelFilter !== 'TODOS' ? ` no Nível ${levelFilter}` : ''}.
                       <br />
-                      <span className="text-[11px] text-slate-400 mt-1 block">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 block">
                         Você pode manter a descrição personalizada digitada se seu cargo for específico.
                       </span>
                     </div>
@@ -255,13 +255,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                           key={`${pos.name}-${pos.nivel}`}
                           type="button"
                           onClick={() => handleSelectCargo(pos)}
-                          className={`w-full text-left px-3.5 py-2.5 text-xs hover:bg-indigo-50 transition flex items-center justify-between group cursor-pointer ${
-                            isSelected ? 'bg-indigo-50/90 font-bold text-indigo-900' : 'text-slate-800'
+                          className={`w-full text-left px-3.5 py-2.5 text-xs hover:bg-indigo-50 dark:hover:bg-slate-700 transition flex items-center justify-between group cursor-pointer ${
+                            isSelected ? 'bg-indigo-50/90 dark:bg-slate-700/80 font-bold text-indigo-900 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'
                           }`}
                         >
                           <div className="flex items-center space-x-2 min-w-0 pr-2">
-                            <Briefcase className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                            <span className="truncate font-medium text-slate-900 group-hover:text-indigo-900">
+                            <Briefcase className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span className="truncate font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-900 dark:group-hover:text-indigo-300">
                               {pos.name}
                             </span>
                           </div>
@@ -270,19 +270,19 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                             <span
                               className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                                 pos.nivel === 'E'
-                                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                  ? 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                                   : pos.nivel === 'D'
-                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
                                   : pos.nivel === 'C'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                                   : pos.nivel === 'B' || pos.nivel === 'A'
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                  : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                  : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                               }`}
                             >
                               {pos.nivel === 'EBTT' ? 'Docente EBTT' : `Nível ${pos.nivel}`}
                             </span>
-                            {isSelected && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                            {isSelected && <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
                           </div>
                         </button>
                       );
@@ -294,15 +294,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
             {/* RSC Almejado */}
             <div className="space-y-1.5 md:col-span-1">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 RSC Almejado <span className="text-rose-500">*</span>
               </label>
               <select
                 name="rscAlmejado"
                 value={userProfile.rscAlmejado}
                 onChange={handleChange}
-                style={{ color: '#150ccf' }}
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-semibold"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-bold"
               >
                 <option value="RSC-PCCTAE I">RSC-PCCTAE I — Fundamental Incompleto (Min: 10 pts | IQ: 10%)</option>
                 <option value="RSC-PCCTAE II">RSC-PCCTAE II — Fundamental Concluído (Min: 15 pts | 2 Crit. | IQ: 15%)</option>
@@ -314,10 +313,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
             </div>
 
             {/* Data de Ingresso no Serviço Público (Crucial para validação de documentos) */}
-            <div className="space-y-1.5 md:col-span-1 bg-amber-50/50 p-3 rounded-xl border border-amber-200/80">
+            <div className="space-y-1.5 md:col-span-1 bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/80 dark:border-amber-900/50">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-amber-700" />
+                <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
                   <span>Data de Ingresso no Serviço Público</span>
                   <span className="text-rose-600 font-extrabold">*</span>
                 </label>
@@ -335,17 +334,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   });
                 }}
                 required
-                className="w-full px-3 py-2 text-xs border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white font-medium text-slate-800"
+                className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-800 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-slate-800 font-medium text-slate-800 dark:text-slate-100"
               />
-              <p className="text-[11px] text-amber-800 leading-tight">
+              <p className="text-[11px] text-amber-800 dark:text-amber-400 leading-tight">
                 <strong>Cruzamento de Validação:</strong> Documentos com data anterior a este ingresso não serão computados para a pontuação do RSC.
               </p>
             </div>
 
             {/* Data do Requerimento do RSC */}
             <div className="space-y-1.5 md:col-span-1">
-              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-slate-500" />
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 <span>Data do Requerimento</span>
               </label>
               <input
@@ -353,34 +352,34 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 name="dataRequerimento"
                 value={userProfile.dataRequerimento || ''}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-800"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
               />
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 Data de formalização do processo de RSC no SEI.
               </p>
             </div>
 
             {/* Matrícula SIAPE */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">Matrícula SIAPE</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Matrícula SIAPE</label>
               <input
                 type="text"
                 name="siape"
                 value={userProfile.siape}
                 onChange={handleChange}
                 placeholder="Ex: 1234567"
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
             {/* Nível de Classificação */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">Nível do Cargo (PCCTAE/EBTT)</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Nível do Cargo (PCCTAE/EBTT)</label>
               <select
                 name="nivelClassificacao"
                 value={userProfile.nivelClassificacao}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
               >
                 <option value="E">Nível E (Superior)</option>
                 <option value="D">Nível D (Médio/Técnico)</option>
@@ -391,25 +390,25 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
             {/* Lotação / UFCG */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">Lotação / Unidade (UFCG)</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Lotação / Unidade (UFCG)</label>
               <input
                 type="text"
                 name="lotacao"
                 value={userProfile.lotacao}
                 onChange={handleChange}
                 placeholder="Ex: Secretaria de Recursos Humanos - SRH / UFCG"
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
             {/* Titulação Atual */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">Escolaridade / Titulação Acadêmica Atual</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Escolaridade / Titulação Acadêmica Atual</label>
               <select
                 name="titulacaoAtual"
                 value={userProfile.titulacaoAtual}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                className="w-full px-3.5 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
               >
                 <option value="fundamental_incompleto">Ensino Fundamental não concluído</option>
                 <option value="fundamental_completo">Ensino Fundamental concluído</option>
@@ -422,14 +421,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           </div>
 
           {/* Descrição Geral do Cargo PCCTAE / Particularidades Funcionais */}
-          <div className="space-y-2 bg-slate-50/80 border border-slate-200 rounded-xl p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60">
+          <div className="space-y-2 bg-slate-50/80 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-750">
               <div>
-                <label className="block text-xs font-bold text-[#132247] flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-[#132247]" />
+                <label className="block text-xs font-bold text-[#132247] dark:text-[#FEF0B2] flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-[#132247] dark:text-[#EAA816]" />
                   Descrição Geral do Cargo PCCTAE e Atribuições da Função
                 </label>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   Busque e carregue a descrição oficial das atribuições do cargo informado ({userProfile.cargo || 'Nenhum cargo informado'}). Você pode copiar ou editar o texto livremente.
                 </p>
               </div>
@@ -453,7 +452,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
                       copied
                         ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
                     }`}
                     title="Copiar texto para a área de transferência"
                   >
@@ -464,7 +463,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                       </>
                     ) : (
                       <>
-                        <Copy className="h-3.5 w-3.5 text-slate-600" />
+                        <Copy className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
                         <span>Copiar Texto</span>
                       </>
                     )}
@@ -480,25 +479,25 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 value={userProfile.observacoes}
                 onChange={handleChange}
                 placeholder="Clique no botão 'Buscar Descrição PCCTAE' para carregar automaticamente as atribuições oficiais do seu cargo ou digite e edite o texto com suas particularidades funcionais..."
-                className="w-full px-3.5 py-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white leading-relaxed font-sans"
+                className="w-full px-3.5 py-2.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 leading-relaxed font-sans"
               />
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-              <span className="inline-flex items-center gap-1 text-slate-600">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+              <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300">
                 💡 <strong>Dica:</strong> Copie ou edite o texto para acrescentar números de portarias de chefia, projetos de extensão e atuações específicas na sua unidade.
               </span>
-              <span className="font-mono text-slate-400 shrink-0 ml-2">
+              <span className="font-mono text-slate-400 dark:text-slate-500 shrink-0 ml-2">
                 {userProfile.observacoes ? userProfile.observacoes.length : 0} caracteres
               </span>
             </div>
           </div>
 
           {/* Legal notice box */}
-          <div className="p-3.5 bg-[#FEF0B2]/70 border-2 border-[#EAA816] rounded-xl text-[#132247] text-xs flex items-start space-x-2.5 shadow-2xs">
-            <Info className="h-4 w-4 text-[#132247] shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-[#FEF0B2]/70 dark:bg-slate-800/90 border-2 border-[#EAA816] rounded-xl text-[#132247] dark:text-[#FEF0B2] text-xs flex items-start space-x-2.5 shadow-2xs">
+            <Info className="h-4 w-4 text-[#132247] dark:text-[#EAA816] shrink-0 mt-0.5" />
             <div className="text-[11px] leading-relaxed">
-              <span className="font-bold text-[#C28600]">Aviso Importante sobre o RSC PCCTAE:</span> Para que a pontuação seja válida perante a Comissão Especial de Avaliação (Resoluções Oficiais e Lei 15.367/2026), todos os documentos anexados na etapa seguinte deverão conter número de portaria/declaração oficial, carga horária descrita e atesto de efetivo exercício ou conclusão.
+              <span className="font-bold text-[#C28600] dark:text-[#EAA816]">Aviso Importante sobre o RSC PCCTAE:</span> Para que a pontuação seja válida perante a Comissão Especial de Avaliação (Resoluções Oficiais e Lei 15.367/2026), todos os documentos anexados na etapa seguinte deverão conter número de portaria/declaração oficial, carga horária descrita e atesto de efetivo exercício ou conclusão.
             </div>
           </div>
 

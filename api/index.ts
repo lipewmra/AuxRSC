@@ -157,6 +157,7 @@ Para cada documento, preencha obrigatoriamente:
 - confianca_ocr: "Alta" | "Media" | "Baixa"
 - motivo_rejeicao: string com explicação se não for válido
 - trecho_comprobatorio_exato: citação IPSIS LITTERIS do texto do PDF que comprova o requisito pontuado.
+- finalidadeDocumento: O que o documento pretende comprovar perante a comissão do RSC e no processo SEI (ex: "Comprovar atuação como membro da Comissão Organizadora de Evento Científico..."). Campo obrigatório e fundamental para a instrução processual.
 - Metadados e os 3 blocos formais A (experienciaProfissionalTexto, max 1500 chars), B (diferencialAtuacaoTexto, max 600 chars), C (impactosSaberesTexto, max 600 chars).`;
 
     const promptText = `Analise o documento PDF em anexo "${fileName || 'documento.pdf'}" para o servidor ${userProfile?.nomeCompleto || 'Servidor'} (Cargo: ${userProfile?.cargo || 'Técnico-Administrativo'}, Nível: ${userProfile?.nivelClassificacao || 'E'}, RSC Almejado: ${userProfile?.rscAlmejado || 'RSC-PCCTAE I'}). Retorne os dados estruturados em JSON segundo o Schema estrito informado, executando prioritariamente a Fase 1 de Validação (Gatekeeper).`;
@@ -274,13 +275,21 @@ Para cada documento, preencha obrigatoriamente:
     const resultText = response.text || '{}';
     const parsed = JSON.parse(resultText);
 
+    const rawItems = parsed.documento_valido === false ? [] : (parsed.items || []);
+    const items = rawItems.map((it: any) => {
+      if (!it.finalidadeDocumento || it.finalidadeDocumento.trim() === '') {
+        it.finalidadeDocumento = `Comprovação de atuação em "${it.title || 'atividade técnica'}" emitida por ${it.issuer || 'órgão competente'} para pontuação no item ${it.categoryCode || 'específico'} (${it.categoryName || 'critério RSC'}) perante o ${userProfile?.rscAlmejado || 'RSC-PCCTAE'}.`;
+      }
+      return it;
+    });
+
     return res.json({
       success: true,
       documento_valido: parsed.documento_valido ?? true,
       tipo_documento: parsed.tipo_documento || 'Outro',
       confianca_ocr: parsed.confianca_ocr || 'Alta',
       motivo_rejeicao: parsed.motivo_rejeicao || '',
-      items: parsed.documento_valido === false ? [] : (parsed.items || []),
+      items,
       summary: parsed.summary || 'Análise concluída.',
       modelUsed: modelUsed || 'gemini-3.1-flash-lite',
     });
@@ -306,54 +315,81 @@ Para cada documento, preencha obrigatoriamente:
   }
 });
 
-// Endpoint: Generate Demonstration of Knowledge and Competencies Text
+// Endpoint: Generate Demonstration of Knowledge and Competencies Text (Alinhamento da Trajetória - Item 2 do Memorial)
 router.post('/generate-memorial-demonstracao', async (req, res) => {
   try {
-    const { userProfile, trajetoriaData, rscSummary } = req.body;
+    const { userProfile, trajetoriaData, rscSummary, rscItems = [] } = req.body;
 
     const ai = getGeminiClient(req);
 
-    const prompt = `Você é um Consultor Especialista Sênior e Membro de Comissão de Avaliação do RSC (Reconhecimento de Saberes e Competências - PCCTAE/EBTT) na Universidade Federal de Campina Grande (UFCG) e MEC.
-Sua tarefa é elaborar o texto formal e fundamentado da seção "DEMONSTRAÇÃO DOS SABERES, DAS COMPETÊNCIAS E DO ALINHAMENTO AO NÍVEL PLEITEADO" para o Memorial Descritivo do servidor em processo SEI.
+    // Sintetizar atividades documentadas por requisito a partir dos itens reais do servidor
+    const activeItems = Array.isArray(rscItems) ? rscItems.filter((it: any) => !it.isDiscarded) : [];
 
-O texto deve ter tom técnico, solene, impessoal/narrativo em 1ª ou 3ª pessoa formal e respeitar rigorosamente a Lei nº 15.367/2026, o Decreto nº 13.048/2026 e os critérios do RSC-PCCTAE.
+    const comissoes = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_1')
+      .map((it: any) => it.title)
+      .slice(0, 6);
 
-DADOS DO SERVIDOR:
-- Nome: ${userProfile?.nomeCompleto || 'Servidor Público'}
-- Matrícula SIAPE: ${userProfile?.siape || 'N/A'}
+    const projetosEnsinoExtensao = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_2')
+      .map((it: any) => it.title)
+      .slice(0, 6);
+
+    const premiacoes = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_3')
+      .map((it: any) => it.title)
+      .slice(0, 3);
+
+    const responsabilidadesTecnicas = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_4')
+      .map((it: any) => it.title)
+      .slice(0, 6);
+
+    const cargosFuncoes = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_5')
+      .map((it: any) => it.title)
+      .slice(0, 4);
+
+    const producoesInovacoes = activeItems
+      .filter((it: any) => it.directiveId === 'requisito_6')
+      .map((it: any) => it.title)
+      .slice(0, 6);
+
+    const prompt = `Você é o redator oficial do Memorial Descritivo de Reconhecimento de Saberes e Competências (RSC - PCCTAE/EBTT) para processo eletrônico no SEI, em estrita consonância com a Lei nº 15.367/2026 e o Decreto nº 13.048/2026.
+Sua missão é redigir o texto contínuo do "Alinhamento da trajetória ao nível pleiteado (item 2 do memorial)", narrando com elegância, densidade e maturidade o histórico da pessoa, a vida e a carreira do servidor no serviço público.
+
+DADOS FUNCIONAIS DO SERVIDOR (SEM DADOS SENSÍVEIS):
+- Nome: ${userProfile?.nomeCompleto || 'Servidor(a)'}
 - Cargo: ${userProfile?.cargo || 'Técnico-Administrativo em Educação'} (Nível ${userProfile?.nivelClassificacao || 'E'})
-- Lotação: ${userProfile?.lotacao || 'UFCG'}
-- Titulação Atual: ${userProfile?.titulacaoAtual || 'Graduação'}
+- Lotação: ${userProfile?.lotacao || 'Instituição Federal de Ensino (UFCG)'}
 - RSC Pleiteado: ${userProfile?.rscAlmejado || 'RSC-PCCTAE I'}
+- Ingresso no Serviço Público: ${trajetoriaData?.dataIngresso || 'Conforme registros funcionais'}
+- Tempo de Efetivo Exercício: ${trajetoriaData?.tempoServico || 'Trajetória funcional consolidada'}
+- Unidades e Setores de Atuação: ${trajetoriaData?.setoresAtuacao || userProfile?.lotacao || 'Unidades acadêmicas e administrativas'}
+- Áreas de Destaque: ${(trajetoriaData?.areasDestaque || []).join('; ') || 'Gestão institucional e suporte acadêmico-administrativo'}
 
-TRAJETÓRIA PROFISSIONAL E DADOS COLETADOS:
-- Data de Ingresso no Serviço Público / UFCG: ${trajetoriaData?.dataIngresso || 'Não informada'}
-- Tempo de Efetivo Exercício na Instituição: ${trajetoriaData?.tempoServico || 'Conforme assentamentos funcionais'}
-- Unidades e Setores de Atuação: ${trajetoriaData?.setoresAtuacao || 'UFCG'}
-- Campos/Áreas de Destaque Marcadas pelo Servidor: ${(trajetoriaData?.areasDestaque || []).join(', ') || 'Gestão e suporte acadêmico-administrativo'}
-- Atividades e Atribuições Principais: ${trajetoriaData?.atividadesDesempenhadas || 'Não detalhadas'}
-- Principais Projetos, Entregas e Comissões de Destaque: ${trajetoriaData?.projetosEntregas || 'Não detalhados'}
-- Impactos, Inovações e Valores Agregados à UFCG: ${trajetoriaData?.impactosMelhorias || 'Não detalhados'}
+HISTÓRICO REAL DE ATIVIDADES E COMPROVANTES DO SERVIDOR (CALCULADORA RSC):
+- Comissões, Colegiados e GTs: ${comissoes.length > 0 ? comissoes.join('; ') : 'Participação em comissões institucionais'}
+- Projetos, Extensão, Ensino e Capacitações: ${projetosEnsinoExtensao.length > 0 ? projetosEnsinoExtensao.join('; ') : 'Engajamento em projetos de extensão e ações de qualificação'}
+- Responsabilidades Técnicas e Gestão: ${responsabilidadesTecnicas.length > 0 ? responsabilidadesTecnicas.join('; ') : 'Gestão de processos, sistemas institucionais e suporte técnico'}
+${premiacoes.length > 0 ? `- Premiações / Reconhecimentos: ${premiacoes.join('; ')}` : ''}
+${cargosFuncoes.length > 0 ? `- Cargos de Direção / Funções Gratificadas: ${cargosFuncoes.join('; ')}` : ''}
+${producoesInovacoes.length > 0 ? `- Inovações, POPs e Produção Técnica: ${producoesInovacoes.join('; ')}` : ''}
+- Atividades Cotidianas Informadas: ${trajetoriaData?.atividadesDesempenhadas || 'Rotinas e atribuições técnicas de elevada complexidade'}
+- Projetos / Entregas Informadas: ${trajetoriaData?.projetosEntregas || 'Projetos institucionais estratégicos'}
+- Impactos e Melhorias Informadas: ${trajetoriaData?.impactosMelhorias || 'Otimização de fluxos de trabalho e redução significativa de prazos administrativos'}
 
-RESUMO DA PONTUAÇÃO ALCANÇADA NA CALCULADORA RSC:
-- Pontuação Total Acumulada: ${rscSummary?.totalScore || 0} pontos (Mínimo do nível: ${rscSummary?.minScore || 10} pts)
-- Critérios Específicos Distintos Alcançados: ${rscSummary?.criteriosAlcancados || 0} de ${rscSummary?.minCriterios || 0} exigidos
-- Pontuação por Requisito:
-  * Requisito I (Conselhos/Comissões/GTs): ${rscSummary?.scoreByReq?.requisito_1 || 0} pts
-  * Requisito II (Projetos/Ensino/Extensão/Capacitação): ${rscSummary?.scoreByReq?.requisito_2 || 0} pts
-  * Requisito III (Premiações): ${rscSummary?.scoreByReq?.requisito_3 || 0} pts
-  * Requisito IV (Responsabilidades Técnicas/Sistemas/Contratos): ${rscSummary?.scoreByReq?.requisito_4 || 0} pts
-  * Requisito V (Cargo CD / Função FG): ${rscSummary?.scoreByReq?.requisito_5 || 0} pts
-  * Requisito VI (Produção Científica/Técnica/Pandemia): ${rscSummary?.scoreByReq?.requisito_6 || 0} pts
+PONTUAÇÃO E CONFORMIDADE:
+- Total Acumulado: ${rscSummary?.totalScore || 0} pontos (Mínimo exigido: ${rscSummary?.minScore || 10} pts)
+- Critérios Específicos Alcançados: ${rscSummary?.criteriosAlcancados || 0} critérios distintos nos termos da Lei 15.367/2026
 
-ESTRUTURA OBRIGATÓRIA DO TEXTO A SER GERADO:
-1. Introdução e Histórico da Trajetória (Data de ingresso, tempo de casa, setores e evolução funcional).
-2. Demonstração Articulada dos Saberes e Competências Adquiridas (Articulação das atividades cotidianas e áreas de destaque marcadas com o cargo e atribuições).
-3. Demonstração dos Projetos, Entregas e Contribuições Institucionais de Destaque para a UFCG.
-4. Fundamentação do Alinhamento e Complexidade com o Nível Pleiteado (${userProfile?.rscAlmejado}) com referência explícita aos ${rscSummary?.totalScore || 0} pontos acumulados e ${rscSummary?.criteriosAlcancados || 0} critérios comprovados nos termos da Lei 15.367/2026.
-5. Conclusão e Requerimento Formal de Deferimento à Comissão de Avaliação.
+DIRETRIZES DE REDAÇÃO E RESTRIÇÕES RIGOROSAS (DECRETO Nº 13.048/2026):
+1. PRIVACIDADE TOTAL (DECRETO Nº 13.048/2026): Não inclua CPF, RG, endereço residencial, telefone pessoal, dados de saúde, senhas, informações sigilosas ou dados pessoais desnecessários de terceiros, pois este Memorial poderá ser publicado no sítio eletrônico institucional antes da decisão da comissão.
+2. TOM DE HISTÓRICO DE VIDA E CARREIRA: O texto deve soar orgânico, contínuo e fluído, como uma narrativa biográfica-funcional da pessoa. Descreva o ingresso, a adaptação às rotinas do cargo, o acúmulo de saberes e responsabilidades técnicas, a consolidação como referência no setor, a participação em comissões organizadoras e projetos de extensão/ensino, e a implementação de inovações procedimentais que resultaram na otimização de fluxos de trabalho e na redução significativa de prazos administrativos, garantindo celeridade processual, integridade dos registros e observância aos princípios de eficiência e probidade da administração pública.
+3. ALINHAMENTO AO NÍVEL PLEITEADO: Conclua demonstrando que a maturidade profissional e a densidade da produção fundamentam plenamente o deferimento do ${userProfile?.rscAlmejado || 'RSC-PCCTAE'}.
+4. LIMITE DE CARACTERES DO SISTEMA SEI: O campo no SEI tem limite máximo estrito de 3.000 caracteres. Redija um texto completo, profundo e substancial que tenha ENTRE 2.000 E 2.800 CARACTERES (NUNCA ULTRAPASSE 2.950 CARACTERES).
 
-Retorne em formato JSON com o campo "demonstracaoTexto" contendo o texto completo e bem formatado em parágrafos claros (entre 400 e 800 palavras).`;
+Retorne em formato JSON com o campo "demonstracaoTexto" contendo o texto contínuo e fundamentado pronto para o campo "Alinhamento da trajetória ao nível pleiteado (item 2 do memorial)".`;
 
     const { response } = await callGeminiWithFallback(ai, {
       contents: prompt,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, FileText, Quote, ShieldCheck } from 'lucide-react';
+import { X, Copy, Check, FileText, Quote, ShieldCheck, Target } from 'lucide-react';
 import { RSCItem } from '../types';
 
 interface EvidenceQuoteModalProps {
@@ -9,10 +9,12 @@ interface EvidenceQuoteModalProps {
 
 export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, onClose }) => {
   const [copied, setCopied] = useState(false);
+  const [copiedFinalidade, setCopiedFinalidade] = useState(false);
 
   if (!item) return null;
 
   const quoteText = item.trechoComprobatorioExato?.trim();
+  const finalidadeText = item.finalidadeDocumento?.trim() || `Comprovação de atuação em "${item.title}" para pontuação no item ${item.categoryCode} (${item.categoryName}).`;
 
   const handleCopy = () => {
     if (!quoteText) return;
@@ -21,11 +23,18 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyFinalidade = () => {
+    if (!finalidadeText) return;
+    navigator.clipboard.writeText(finalidadeText);
+    setCopiedFinalidade(true);
+    setTimeout(() => setCopiedFinalidade(false), 2000);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150 transition-colors duration-200">
         {/* Header */}
-        <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+        <div className="bg-slate-900 dark:bg-slate-950 text-white px-5 py-4 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-2.5 min-w-0">
             <div className="h-8 w-8 rounded-lg bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center shrink-0">
               <Quote className="h-4 w-4 text-indigo-300" />
@@ -34,7 +43,7 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
               <h3 className="font-bold text-sm sm:text-base text-white truncate">
                 Trecho Comprobatório Exato (Evidência Documental)
               </h3>
-              <p className="text-xs text-slate-300 truncate">
+              <p className="text-xs text-slate-300 dark:text-slate-400 truncate">
                 Citação textual extraída diretamente do PDF para comprovação legal
               </p>
             </div>
@@ -53,21 +62,21 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Metadata Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-start space-x-2">
-              <FileText className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+            <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-start space-x-2">
+              <FileText className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Arquivo Analisado</span>
-                <span className="font-semibold text-slate-800 break-all text-xs">
+                <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Arquivo Analisado</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 break-all text-xs">
                   {item.documentName || 'Documento Anexo'}
                 </span>
               </div>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-start space-x-2">
-              <ShieldCheck className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+            <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-start space-x-2">
+              <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Critério / Item</span>
-                <span className="font-semibold text-slate-800 truncate block text-xs">
+                <span className="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Critério / Item</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block text-xs">
                   {item.categoryCode} - {item.categoryName}
                 </span>
               </div>
@@ -75,30 +84,61 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
           </div>
 
           <div>
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
               Atividade Mapeada
             </span>
-            <p className="text-xs sm:text-sm font-semibold text-slate-900 bg-amber-50/60 border border-amber-200 rounded-xl p-3">
+            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-xl p-3">
               {item.title}
+            </p>
+          </div>
+
+          {/* O que o documento pretende comprovar (Finalidade Comprobatória) */}
+          <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-indigo-950 dark:text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="h-3.5 w-3.5 text-indigo-700 dark:text-indigo-400" />
+                O que o documento pretende comprovar (Finalidade no Processo)
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyFinalidade}
+                className="inline-flex items-center space-x-1 text-xs text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 font-semibold px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 shadow-2xs hover:bg-indigo-100/70 dark:hover:bg-slate-700 transition cursor-pointer"
+                title="Copiar finalidade para colar no SEI"
+              >
+                {copiedFinalidade ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 dark:text-emerald-400">Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>Copiar Finalidade</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+              {finalidadeText}
             </p>
           </div>
 
           {/* Quote Block */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                <Quote className="h-3.5 w-3.5 text-indigo-600" /> Citação Literal Extraída do PDF
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Quote className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" /> Citação Literal Extraída do PDF
               </span>
               {quoteText && (
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="inline-flex items-center space-x-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded-md hover:bg-indigo-50 transition cursor-pointer"
+                  className="inline-flex items-center space-x-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-semibold px-2 py-1 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition cursor-pointer"
                 >
                   {copied ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      <span className="text-emerald-700">Copiado!</span>
+                      <span className="text-emerald-700 dark:text-emerald-400">Copiado!</span>
                     </>
                   ) : (
                     <>
@@ -111,17 +151,17 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
             </div>
 
             {quoteText ? (
-              <div className="bg-slate-900 text-slate-100 rounded-xl p-4 font-mono text-xs leading-relaxed border border-slate-800 shadow-inner relative group select-text whitespace-pre-wrap max-h-60 overflow-y-auto">
+              <div className="bg-slate-900 dark:bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs leading-relaxed border border-slate-800 shadow-inner relative group select-text whitespace-pre-wrap max-h-60 overflow-y-auto">
                 {quoteText}
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-xs">
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-300 rounded-xl p-4 text-xs">
                 Nenhum trecho textual exato foi registrado para este item (comum em itens cadastrados manualmente ou extraídos de documentos sem texto legível).
               </div>
             )}
           </div>
 
-          <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 text-[11px] text-indigo-900 leading-relaxed flex items-start gap-2">
+          <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-xl p-3 text-[11px] text-indigo-900 dark:text-indigo-200 leading-relaxed flex items-start gap-2">
             <span className="text-base">⚖️</span>
             <div>
               <strong>Segurança Jurídica (Regra do Grounding Rígido):</strong> Este trecho serve de subsídio probatório direto para a Comissão de Avaliação do RSC, comprovando que a atividade não foi inventada ou presumida.
@@ -130,12 +170,12 @@ export const EvidenceQuoteModal: React.FC<EvidenceQuoteModalProps> = ({ item, on
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 border-t border-slate-200 px-5 py-3 flex items-center justify-end space-x-2">
+        <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center justify-end space-x-2">
           {quoteText && (
             <button
               type="button"
               onClick={handleCopy}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition cursor-pointer inline-flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer inline-flex items-center gap-1.5"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? 'Copiado para a Área de Transferência' : 'Copiar Trecho'}

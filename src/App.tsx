@@ -3,6 +3,8 @@ import { AlertTriangle, Mail } from 'lucide-react';
 import { UserProfile, UploadedDocument, RSCItem, SessionState } from './types';
 import { STANDARD_CATEGORIES } from './data/rscStructure';
 import { Header } from './components/Header';
+import { MetricsBar } from './components/MetricsBar';
+import { SettingsModal, AppTheme, AppFontSize } from './components/SettingsModal';
 import { StepIndicator } from './components/StepIndicator';
 import { ProfileForm } from './components/ProfileForm';
 import { PdfUploader } from './components/PdfUploader';
@@ -44,7 +46,39 @@ export default function App() {
   const [apiKeyModalReason, setApiKeyModalReason] = useState<string | null>(null);
   const [isTutorialModalOpen, setIsTutorialModalOpen] = useState(false);
   const [isIntroAnimationOpen, setIsIntroAnimationOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [exportImportModalMode, setExportImportModalMode] = useState<'export' | 'import' | null>(null);
+
+  // Theme (Light / Dark) & Font Size Scaling State
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    const saved = localStorage.getItem('rsc_theme');
+    return saved === 'dark' ? 'dark' : 'light';
+  });
+
+  const [fontSize, setFontSize] = useState<AppFontSize>(() => {
+    const saved = localStorage.getItem('rsc_font_size');
+    return (saved as AppFontSize) || 'normal';
+  });
+
+  // Synchronize dark mode class on HTML document
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('rsc_theme', theme);
+  }, [theme]);
+
+  // Synchronize font size attribute on HTML document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-font-size', fontSize);
+    localStorage.setItem('rsc_font_size', fontSize);
+  }, [fontSize]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Helper to verify if API key exists before triggering AI operations (soft check, lets server try process.env first)
   const ensureApiKey = (_reason: string): boolean => {
@@ -331,12 +365,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans flex flex-col w-full overflow-x-hidden">
+    <div className={`min-h-screen font-sans flex flex-col w-full overflow-x-hidden transition-colors duration-200 ${
+      theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100/70 text-slate-900'
+    }`}>
       {/* Fixed Notice Banner Top */}
-      <div className="bg-[#FEF0B2] border-b-2 border-[#EAA816] text-[#132247] px-4 py-2 text-xs text-center font-medium flex items-center justify-center gap-2 shadow-2xs">
-        <AlertTriangle className="h-4 w-4 text-[#132247] shrink-0" />
+      <div className={`px-4 py-2 text-xs text-center font-medium flex items-center justify-center gap-2 shadow-2xs transition-colors duration-200 ${
+        theme === 'dark'
+          ? 'bg-slate-900 border-b border-amber-500/40 text-amber-200'
+          : 'bg-[#FEF0B2] border-b-2 border-[#EAA816] text-[#132247]'
+      }`}>
+        <AlertTriangle className={`h-4 w-4 shrink-0 ${theme === 'dark' ? 'text-amber-400' : 'text-[#132247]'}`} />
         <span>
-          <strong className="text-[#C28600]">ATENÇÃO:</strong> O sistema auxilia no preenchimento da calculadora RSC, mas todos os dados devem ser conferidos antes de sua inclusão no sistema oficial. Como a Inteligência Artificial pode apresentar divergências ou inconsistências (&quot;alucinações&quot;), o usuário deve sempre revisar todo o conteúdo gerado. Não nos responsabilizamos pelas informações produzidas.
+          <strong className={theme === 'dark' ? 'text-amber-300 font-bold' : 'text-[#C28600] font-bold'}>ATENÇÃO:</strong> O sistema auxilia no preenchimento da calculadora RSC, mas todos os dados devem ser conferidos antes de sua inclusão no sistema oficial. Como a Inteligência Artificial pode apresentar divergências ou inconsistências (&quot;alucinações&quot;), o usuário deve sempre revisar todo o conteúdo gerado. Não nos responsabilizamos pelas informações produzidas.
         </span>
       </div>
 
@@ -346,12 +386,21 @@ export default function App() {
         totalScore={totalScore}
         rscItemCount={rscItems.length}
         rscItems={rscItems}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onOpenExport={() => setExportImportModalMode('export')}
         onOpenImport={() => setExportImportModalMode('import')}
-        onOpenLegalModal={() => setIsLegalModalOpen(true)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-        onOpenTutorial={() => setIsTutorialModalOpen(true)}
-        onOpenIntro={() => setIsIntroAnimationOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+      />
+
+      {/* HUD DE MÉTRICAS PRINCIPAIS EM ALTO DESTAQUE: META, PONTUAÇÃO, CRITÉRIOS E ITENS */}
+      <MetricsBar
+        userProfile={userProfile}
+        totalScore={totalScore}
+        rscItemCount={rscItems.length}
+        rscItems={rscItems}
+        theme={theme}
       />
 
       {/* Step Tracker */}
@@ -424,7 +473,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto w-full">
+      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto w-full transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 space-y-3 flex flex-col items-center">
           <img 
             src={footerLogo} 
@@ -433,45 +482,58 @@ export default function App() {
             style={{ width: '100px', height: '100px', borderWidth: '0px' }}
             referrerPolicy="no-referrer"
           />
-          <p className="font-semibold text-slate-800 flex items-center justify-center gap-2 flex-wrap">
+          <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 flex-wrap">
             <span>Auxiliador de Preenchimento do RSC-TAE • Sistema de Suporte à Calculadora RSC (PCCTAE/EBTT)</span>
             <span className="bg-[#132247] text-[#FEF0B2] border border-[#EAA816] text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
-              v3.0
+              v3.1
             </span>
           </p>
-          <div className="text-[11px] text-slate-500 flex flex-col items-center justify-center gap-1.5">
-            <span className="font-semibold text-slate-700">Desenvolvido por / Créditos de criação:</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-1.5">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Desenvolvido por / Créditos de criação:</span>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 flex-wrap">
               <span className="inline-flex items-center gap-1 flex-wrap justify-center">
-                <strong className="text-slate-800 font-bold">Philippe Wagner Melo Regis de Araujo</strong>
+                <strong className="text-slate-800 dark:text-slate-200 font-bold">Philippe Wagner Melo Regis de Araujo</strong>
                 <a
                   href="mailto:philippewagnermra@gmail.com"
-                  className="text-indigo-600 hover:underline inline-flex items-center gap-0.5"
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5"
                 >
-                  <Mail className="h-3 w-3 inline text-indigo-600" />
+                  <Mail className="h-3 w-3 inline text-indigo-600 dark:text-indigo-400" />
                   philippewagnermra@gmail.com
                 </a>
               </span>
-              <span className="hidden sm:inline text-slate-300">•</span>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
               <span className="inline-flex items-center gap-1 flex-wrap justify-center">
-                <strong className="text-slate-800 font-bold">Paulo Henrique Maciel Oliveira</strong>
+                <strong className="text-slate-800 dark:text-slate-200 font-bold">Paulo Henrique Maciel Oliveira</strong>
                 <a
                   href="mailto:ph.macieloliveira@gmail.com"
-                  className="text-indigo-600 hover:underline inline-flex items-center gap-0.5"
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5"
                 >
-                  <Mail className="h-3 w-3 inline text-indigo-600" />
+                  <Mail className="h-3 w-3 inline text-indigo-600 dark:text-indigo-400" />
                   ph.macieloliveira@gmail.com
                 </a>
               </span>
             </div>
           </div>
-          <p className="text-[10px] text-slate-400">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
             Fundamentado na Lei nº 15.367/2026, Decreto nº 13.048/2026 e Resoluções Oficiais de Avaliação do RSC.
           </p>
         </div>
       </footer>
 
       {/* Modals */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        theme={theme}
+        onThemeChange={setTheme}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
+        onOpenIntro={() => setIsIntroAnimationOpen(true)}
+        onOpenTutorial={() => setIsTutorialModalOpen(true)}
+        onOpenLegalModal={() => setIsLegalModalOpen(true)}
+        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+      />
+
       <RscIntroAnimationModal
         isOpen={isIntroAnimationOpen}
         onClose={() => setIsIntroAnimationOpen(false)}

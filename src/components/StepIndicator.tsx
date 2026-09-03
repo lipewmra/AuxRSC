@@ -21,7 +21,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200 py-3 shadow-xs">
+    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 shadow-xs transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Progress">
           <ol className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
@@ -38,10 +38,10 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                     onClick={() => onSelectStep(step.id)}
                     className={`w-full text-left p-2.5 rounded-xl transition border text-xs flex items-center space-x-3 cursor-pointer ${
                       isActive
-                        ? 'bg-[#FEF0B2]/80 border-2 border-[#EAA816] text-[#132247] shadow-xs font-semibold'
+                        ? 'bg-[#FEF0B2]/90 dark:bg-[#132247] border-2 border-[#EAA816] text-[#132247] dark:text-[#FEF0B2] shadow-xs font-semibold ring-2 ring-[#EAA816]/30'
                         : isCompleted
-                        ? 'bg-slate-50 border-slate-300 text-slate-800 hover:bg-[#FEF0B2]/40 hover:border-[#EAA816]/60'
-                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                        ? 'bg-white dark:bg-white border-emerald-400 dark:border-emerald-500 text-slate-900 dark:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-100 shadow-xs'
+                        : 'bg-white dark:bg-white border-slate-300 dark:border-slate-300 text-slate-900 dark:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-100 shadow-xs'
                     }`}
                   >
                     <div
@@ -49,26 +49,42 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                         isActive
                           ? 'bg-[#132247] text-[#FEF0B2] border-2 border-[#EAA816] shadow-xs ring-2 ring-[#EAA816]/30'
                           : isCompleted
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                          : 'bg-white text-[#132247] border border-slate-300'
+                          ? 'bg-emerald-50 dark:bg-emerald-50 text-emerald-800 dark:text-emerald-800 border border-emerald-300 dark:border-emerald-300'
+                          : 'bg-slate-100 dark:bg-slate-100 text-[#132247] dark:text-[#132247] border border-slate-300 dark:border-slate-300'
                       }`}
                     >
                       <Icon
-                        className="h-4.5 w-4.5 shrink-0"
+                        className={`h-4.5 w-4.5 shrink-0 ${
+                          isActive
+                            ? 'text-[#FEF0B2]'
+                            : isCompleted
+                            ? 'text-emerald-800 dark:text-emerald-800'
+                            : 'text-[#132247] dark:text-[#132247]'
+                        }`}
                         strokeWidth={isActive ? 2.5 : 2}
-                        style={{
-                          color: isActive ? '#FEF0B2' : isCompleted ? '#047857' : '#132247',
-                          stroke: isActive ? '#FEF0B2' : isCompleted ? '#047857' : '#132247',
-                        }}
                       />
                     </div>
                     <div className="min-w-0 flex-1 hidden sm:block">
-                      <p className={`truncate text-xs ${isActive ? 'font-bold text-[#132247]' : 'font-medium text-slate-800'}`}>
+                      <p className={`truncate text-xs ${
+                        isActive 
+                          ? 'font-bold text-[#132247] dark:text-[#FEF0B2]' 
+                          : 'font-bold text-slate-900 dark:text-slate-900'
+                      }`}>
                         {step.stepNumber}. {step.title}
                       </p>
-                      <p className={`text-[10px] truncate ${isActive ? 'text-[#C28600] font-semibold' : 'text-slate-500'}`}>{step.desc}</p>
+                      <p className={`text-[10px] truncate ${
+                        isActive 
+                          ? 'text-[#C28600] dark:text-[#EAA816] font-semibold' 
+                          : 'text-slate-600 dark:text-slate-700 font-medium'
+                      }`}>
+                        {step.desc}
+                      </p>
                     </div>
-                    <div className="sm:hidden font-semibold text-xs text-[#132247]">
+                    <div className={`sm:hidden font-semibold text-xs ${
+                      isActive 
+                        ? 'text-[#132247] dark:text-[#FEF0B2]' 
+                        : 'text-slate-900 dark:text-slate-900'
+                    }`}>
                       Passo {step.stepNumber}
                     </div>
                   </button>

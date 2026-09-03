@@ -30,7 +30,15 @@ import {
   Ban,
   RotateCcw,
   BarChart3,
+  Target,
 } from 'lucide-react';
+
+export const getItemFinalidade = (item: RSCItem, userProfile?: UserProfile): string => {
+  if (item.finalidadeDocumento && item.finalidadeDocumento.trim().length > 0) {
+    return item.finalidadeDocumento.trim();
+  }
+  return `Comprovação de atuação em "${item.title}" emitida por ${item.issuer || 'órgão competente'} para pontuação no item ${item.categoryCode} (${item.categoryName}) perante o ${userProfile?.rscAlmejado || 'RSC-PCCTAE'}.`;
+};
 
 interface RscCalculatorOrganizerProps {
   rscItems: RSCItem[];
@@ -308,6 +316,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       orgaoEmissor: newItem.issuer,
       periodoVigencia: newItem.periodoVigencia,
       documentName: 'Adicionado Manualmente',
+      finalidadeDocumento: newItem.finalidadeDocumento || `Comprovação de atuação em "${newItem.title}" emitida por ${newItem.issuer || 'órgão competente'} para pontuação no item ${newItem.categoryCode} perante o ${userProfile?.rscAlmejado || 'RSC-PCCTAE'}.`,
     };
 
     onAddItem(created);
@@ -470,32 +479,32 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         const priorItems = activeItems.filter((item) => item.isPriorToPublicService);
         if (priorItems.length === 0) return null;
         return (
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 shadow-xs space-y-2">
+          <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-900/60 rounded-2xl p-4 shadow-xs space-y-2">
             <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
-                <Calendar className="h-5 w-5 text-amber-700" />
+              <div className="h-9 w-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-800 flex items-center justify-center shrink-0">
+                <Calendar className="h-5 w-5 text-amber-700 dark:text-amber-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-xs sm:text-sm font-bold text-amber-950">
+                  <h3 className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-200">
                     Cruzamento com Ingresso no Serviço Público: {priorItems.length} documento(s) com data anterior a {formatDateDisplay(entryDate) || 'não informada'}
                   </h3>
-                  <span className="bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                  <span className="bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
                     Não Pontua
                   </span>
                 </div>
-                <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                <p className="text-xs text-amber-800 dark:text-amber-300 mt-1 leading-relaxed">
                   Pelo regulamento do RSC-PCCTAE, apenas documentos emitidos e atividades executadas após o ingresso no serviço público ({formatDateDisplay(entryDate) || 'não informado'}) pontuam. Esses itens estão desconsiderados dos cálculos.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {priorItems.map((p) => (
                     <span
                       key={p.id}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[11px] font-medium shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-[11px] font-medium shadow-2xs"
                     >
-                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
+                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                       <span className="font-bold truncate max-w-[200px]">{p.title}</span>
-                      <span className="text-amber-700 text-[10px]">({p.effectiveDocumentDate || p.dataDocumento || 'Data anterior'})</span>
+                      <span className="text-amber-700 dark:text-amber-400 text-[10px]">({p.effectiveDocumentDate || p.dataDocumento || 'Data anterior'})</span>
                     </span>
                   ))}
                 </div>
@@ -506,7 +515,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       })()}
 
       {/* Barra de Filtro por Requisito e Botão de Adição Manual */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-200">
         {/* Filtros de Requisitos */}
         <div className="flex flex-wrap items-center gap-1.5">
           <button
@@ -515,7 +524,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
               selectedDirective === 'all'
                 ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#FEF0B2]/60 hover:text-slate-900 hover:border-[#EAA816]/60 border border-slate-200 dark:border-slate-700'
             }`}
           >
             Todos os Requisitos ({activeItems.length})
@@ -528,7 +537,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                 selectedDirective === d.id
                   ? 'bg-[#132247] text-white border-2 border-[#EAA816] shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816]/60 border border-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#FEF0B2]/60 hover:text-slate-900 hover:border-[#EAA816]/60 border border-slate-200 dark:border-slate-700'
               }`}
             >
               {d.name}
@@ -549,16 +558,16 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
       {/* Formulário de Adicionar Item Manual */}
       {isAddingNew && (
-        <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-6 space-y-4 animate-in fade-in duration-150">
-          <div className="flex justify-between items-center pb-2 border-b border-emerald-200">
-            <h3 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
-              <Plus className="h-4 w-4 text-emerald-600" />
+        <div className="bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 rounded-2xl p-6 space-y-4 animate-in fade-in duration-150">
+          <div className="flex justify-between items-center pb-2 border-b border-emerald-200 dark:border-emerald-800">
+            <h3 className="text-sm font-bold text-emerald-950 dark:text-emerald-200 flex items-center gap-2">
+              <Plus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Cadastrar Novo Item na Calculadora RSC
             </h3>
             <button
               type="button"
               onClick={() => setIsAddingNew(false)}
-              className="text-xs text-slate-500 hover:text-slate-800"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             >
               Cancelar
             </button>
@@ -566,35 +575,35 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
           <form onSubmit={handleSaveNew} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="md:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Título da Atividade / Comprovante *</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Título da Atividade / Comprovante *</label>
               <input
                 type="text"
                 required
                 value={newItem.title}
                 onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
                 placeholder="Ex: Portaria de Designação de Comissão..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Órgão Emissor / Instituição *</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Órgão Emissor / Instituição *</label>
               <input
                 type="text"
                 required
                 value={newItem.issuer}
                 onChange={(e) => setNewItem({ ...newItem, issuer: e.target.value })}
                 placeholder="Ex: Reitoria UFCG, SRH..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Requisito do RSC</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Requisito do RSC</label>
               <select
                 value={newItem.directiveId}
                 onChange={(e) => setNewItem({ ...newItem, directiveId: e.target.value as RSCDirectiveId })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-semibold text-slate-800"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200"
               >
                 {orderedDirectives.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -605,7 +614,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Código / Categoria da Tabela Oficial</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Código / Categoria da Tabela Oficial</label>
               <select
                 value={newItem.categoryCode}
                 onChange={(e) => {
@@ -619,7 +628,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                     regulatoryBasis: cat ? cat.legalRef : 'Tabela Oficial RSC',
                   });
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               >
                 {STANDARD_CATEGORIES.map((cat) => (
                   <option key={cat.code} value={cat.code}>
@@ -629,42 +638,42 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:col-span-2 bg-white p-3 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:col-span-2 bg-white dark:bg-slate-800/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Data do Documento</label>
                 <input
                   type="text"
                   placeholder="DD/MM/AAAA"
                   value={newItem.dataDocumento || ''}
                   onChange={(e) => setNewItem({ ...newItem, dataDocumento: e.target.value })}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                  className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Data Início</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Data Início</label>
                 <input
                   type="text"
                   placeholder="Ex: 01/01/2023"
                   value={newItem.startDate || ''}
                   onChange={(e) => setNewItem({ ...newItem, startDate: e.target.value })}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                  className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Data Fim</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Data Fim</label>
                 <input
                   type="text"
                   placeholder="Ex: 31/12/2023"
                   value={newItem.endDate || ''}
                   onChange={(e) => setNewItem({ ...newItem, endDate: e.target.value })}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
+                  className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:col-span-2">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Pontos Unitários</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pontos Unitários</label>
                 <input
                   type="number"
                   step="0.1"
@@ -677,12 +686,12 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                       totalScore: pts * (newItem.quantity || 1),
                     });
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Quantidade / Multiplicador</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Quantidade / Multiplicador</label>
                 <input
                   type="number"
                   step="1"
@@ -696,16 +705,30 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                       totalScore: (newItem.unitPoints || 1) * qty,
                     });
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
-            <div className="md:col-span-2 flex justify-end space-x-2 pt-3 border-t border-emerald-200">
+            {/* O que o documento pretende comprovar */}
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                O que o documento pretende comprovar (Finalidade no Processo SEI)
+              </label>
+              <textarea
+                rows={2}
+                value={newItem.finalidadeDocumento || ''}
+                onChange={(e) => setNewItem({ ...newItem, finalidadeDocumento: e.target.value })}
+                placeholder="Ex: Comprovação de atuação como membro de comissão técnica permanente..."
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 resize-none"
+              />
+            </div>
+
+            <div className="md:col-span-2 flex justify-end space-x-2 pt-3 border-t border-emerald-200 dark:border-emerald-800">
               <button
                 type="button"
                 onClick={() => setIsAddingNew(false)}
-                className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition"
               >
                 Cancelar
               </button>
@@ -722,10 +745,10 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
       {/* Lista Principal de Itens: Agrupados por Requisito e por Item/Família */}
       {groupedSections.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
-          <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700">Nenhum item encontrado</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center shadow-xs transition-colors duration-200">
+          <FileText className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Nenhum item encontrado</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
             Não há atividades mapeadas para o filtro selecionado. Você pode cadastrar manualmente ou voltar ao Passo 2 para enviar PDFs.
           </p>
         </div>
@@ -734,18 +757,18 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
           {groupedSections.map((section) => (
             <div key={section.directive.id} className="space-y-4">
               {/* Cabeçalho do Requisito */}
-              <div className="flex items-center justify-between border-b-2 border-[#132247] pb-2">
+              <div className="flex items-center justify-between border-b-2 border-[#132247] dark:border-slate-700 pb-2">
                 <div className="flex items-center gap-2.5">
                   <div className="h-7 w-7 rounded-lg bg-[#132247] text-[#EAA816] flex items-center justify-center text-xs font-black">
                     {section.directive.roman}
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-[#132247]">
+                    <h3 className="text-sm font-black text-[#132247] dark:text-[#EAA816]">
                       {section.directive.name}: {section.directive.desc}
                     </h3>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800">
                   {section.categories.reduce((acc, c) => acc + c.items.length, 0)} comprovante(s)
                 </span>
               </div>
@@ -757,23 +780,23 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                     key={catGroup.categoryCode}
                     className={`rounded-2xl border transition shadow-xs overflow-hidden ${
                       catGroup.isFamily
-                        ? 'border-indigo-300 bg-indigo-50/20'
-                        : 'border-slate-200 bg-white'
+                        ? 'border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/20 dark:bg-indigo-950/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
                     }`}
                   >
                     {/* Cabeçalho do Item / Critério da Tabela */}
-                    <div className="bg-slate-100/90 border-b border-slate-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-[#132247] text-white text-xs font-black px-2.5 py-0.5 rounded-md">
                           Item {catGroup.categoryCode}
                         </span>
-                        <span className="font-bold text-xs text-slate-900">
+                        <span className="font-bold text-xs text-slate-900 dark:text-white">
                           {catGroup.categoryName}
                         </span>
 
                         {catGroup.isFamily && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-bold border border-indigo-200">
-                            <Layers className="h-3 w-3 text-indigo-600" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-200 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800">
+                            <Layers className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
                             Família com {catGroup.items.length} comprovantes unidos
                           </span>
                         )}
@@ -796,7 +819,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                     </div>
 
                     {/* Lista de Comprovantes deste Critério */}
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {catGroup.items.map((item) => {
                         const isExpanded = expandedItemId === item.id;
                         const isCompleted = !!item.isCompleted;
@@ -806,8 +829,8 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                             key={item.id}
                             className={`p-4 transition ${
                               isCompleted
-                                ? 'bg-emerald-50/30'
-                                : 'bg-white hover:bg-slate-50/80'
+                                ? 'bg-emerald-50/30 dark:bg-emerald-950/20'
+                                : 'bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
                             }`}
                           >
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -817,42 +840,42 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleToggleCompleted(item)}
-                                  className="mt-0.5 text-slate-400 hover:text-emerald-600 transition cursor-pointer shrink-0"
+                                  className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer shrink-0"
                                   title={isCompleted ? 'Desmarcar como concluído' : 'Marcar como concluído'}
                                 >
                                   {isCompleted ? (
-                                    <CheckSquare className="h-5 w-5 text-emerald-600" />
+                                    <CheckSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                                   ) : (
-                                    <Square className="h-5 w-5 text-slate-400 hover:text-slate-600" />
+                                    <Square className="h-5 w-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
                                   )}
                                 </button>
 
                                 <div className="space-y-1.5 min-w-0 flex-1">
-                                  {/* Nome do Arquivo Analisado BEM DESTACADO (Item 1 solicitado pelo usuário) */}
+                                  {/* Nome do Arquivo Analisado BEM DESTACADO */}
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-bold border border-slate-300">
-                                      <FileText className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-[11px] font-bold border border-slate-300 dark:border-slate-700">
+                                      <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                                       <span className="truncate max-w-[260px] sm:max-w-md">
                                         Arquivo: {item.documentName || 'Documento Comprobatório'}
                                       </span>
                                     </span>
 
                                     {item.isFamilyConsolidated && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
-                                        <CheckCircle className="h-3 w-3 text-indigo-600" /> Textos A, B e C Unidos
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-200 dark:border-indigo-800">
+                                        <CheckCircle className="h-3 w-3 text-indigo-600 dark:text-indigo-400" /> Textos A, B e C Unidos
                                       </span>
                                     )}
 
                                     {item.isPriorToPublicService ? (
-                                      <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-semibold flex items-center gap-1 border border-rose-200">
-                                        <ShieldAlert className="h-3 w-3 text-rose-600" /> Anterior ao Ingresso (Não Pontua)
+                                      <span className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-[10px] font-semibold flex items-center gap-1 border border-rose-200 dark:border-rose-800">
+                                        <ShieldAlert className="h-3 w-3 text-rose-600 dark:text-rose-400" /> Anterior ao Ingresso (Não Pontua)
                                       </span>
                                     ) : item.complianceStatus === 'valid' ? (
-                                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-semibold flex items-center gap-1 border border-emerald-200">
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
                                         <CheckCircle className="h-3 w-3" /> Válido
                                       </span>
                                     ) : (
-                                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-semibold flex items-center gap-1 border border-amber-200">
+                                      <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-[10px] font-semibold flex items-center gap-1 border border-amber-200 dark:border-amber-800">
                                         <AlertTriangle className="h-3 w-3" /> Requer Ajuste
                                       </span>
                                     )}
@@ -864,7 +887,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                       className={`text-sm font-bold leading-snug ${
                                         item.isPriorToPublicService
                                           ? 'text-slate-500 line-through'
-                                          : 'text-slate-900'
+                                          : 'text-slate-900 dark:text-white'
                                       }`}
                                     >
                                       {item.title}
@@ -872,11 +895,11 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => copyFieldText(item.title, item.id + '_title')}
-                                      className="p-1 text-slate-400 hover:text-indigo-600 rounded transition shrink-0 cursor-pointer"
+                                      className="p-1 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition shrink-0 cursor-pointer"
                                       title="Copiar Título"
                                     >
                                       {copiedFieldKey === item.id + '_title' ? (
-                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                        <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                                       ) : (
                                         <Copy className="h-3.5 w-3.5" />
                                       )}
@@ -884,33 +907,68 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   </div>
 
                                   {/* Metadados: Emissor, Data, Carga Horária, Processo SEI */}
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                                     <span>
-                                      Emissor: <strong className="text-slate-700">{item.issuer}</strong>
+                                      Emissor: <strong className="text-slate-700 dark:text-slate-200">{item.issuer}</strong>
                                     </span>
                                     {item.dataDocumento && (
-                                      <span className="text-amber-800 font-medium">
+                                      <span className="text-amber-800 dark:text-amber-400 font-medium">
                                         Data: <strong>{item.dataDocumento}</strong>
                                       </span>
                                     )}
                                     {item.workloadHours && (
                                       <span>
-                                        Carga: <strong className="text-slate-700">{item.workloadHours}h</strong>
+                                        Carga: <strong className="text-slate-700 dark:text-slate-200">{item.workloadHours}h</strong>
                                       </span>
                                     )}
                                     {item.numeroIdentificacaoSei && (
                                       <span>
-                                        Identificação/SEI: <strong className="text-slate-700">{item.numeroIdentificacaoSei}</strong>
+                                        Identificação/SEI: <strong className="text-slate-700 dark:text-slate-200">{item.numeroIdentificacaoSei}</strong>
                                       </span>
                                     )}
+                                  </div>
+
+                                  {/* O que o documento pretende comprovar (Finalidade Comprobatória) */}
+                                  <div className="mt-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-bold text-[11px] mb-0.5">
+                                        <Target className="h-3.5 w-3.5 text-[#132247] dark:text-indigo-400 shrink-0" />
+                                        <span>O que o documento pretende comprovar (Finalidade no Processo):</span>
+                                      </div>
+                                      <p className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+                                        {getItemFinalidade(item, userProfile)}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => copyFieldText(getItemFinalidade(item, userProfile), item.id + '_finalidade')}
+                                      className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-2xs ${
+                                        copiedFieldKey === item.id + '_finalidade'
+                                          ? 'bg-emerald-600 text-white border-emerald-600'
+                                          : 'bg-white dark:bg-slate-800 hover:bg-[#132247] hover:text-white dark:hover:bg-slate-700 text-[#132247] dark:text-indigo-300 border-slate-300 dark:border-slate-700'
+                                      }`}
+                                      title="Copiar o que o documento pretende comprovar para colar no SEI"
+                                    >
+                                      {copiedFieldKey === item.id + '_finalidade' ? (
+                                        <>
+                                          <Check className="h-3.5 w-3.5" />
+                                          <span>Copiado!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="h-3.5 w-3.5" />
+                                          <span>Copiar Finalidade</span>
+                                        </>
+                                      )}
+                                    </button>
                                   </div>
                                 </div>
                               </div>
 
                               {/* Pontuação & Ações */}
-                              <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                              <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
                                 <div className="text-left md:text-right">
-                                  <span className="text-[10px] uppercase text-slate-400 block font-semibold">
+                                  <span className="text-[10px] uppercase text-slate-400 dark:text-slate-500 block font-semibold">
                                     Pontuação
                                   </span>
                                   {item.isPriorToPublicService ? (
@@ -918,17 +976,17 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                       <span className="text-sm font-bold text-slate-400 line-through">
                                         {item.totalScore.toFixed(1)} pts
                                       </span>
-                                      <span className="text-[10px] font-bold text-rose-600 block">
+                                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 block">
                                         0.0 pts (Excluído)
                                       </span>
                                     </div>
                                   ) : (
                                     <div>
-                                      <span className="text-base font-black text-indigo-900">
+                                      <span className="text-base font-black text-indigo-900 dark:text-indigo-300">
                                         {item.totalScore.toFixed(1)}{' '}
-                                        <span className="text-xs font-normal text-slate-500">pts</span>
+                                        <span className="text-xs font-normal text-slate-500 dark:text-slate-400">pts</span>
                                       </span>
-                                      <span className="text-[10px] text-slate-400 block">
+                                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
                                         ({item.quantity} x {item.unitPoints} pt)
                                       </span>
                                     </div>
@@ -936,15 +994,15 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                 </div>
 
                                 <div className="flex items-center space-x-1.5">
-                                  {/* Botão de Trecho Comprobatório Exato (Item 4 solicitado pelo usuário: abre modal) */}
+                                  {/* Botão de Trecho Comprobatório Exato */}
                                   {item.trechoComprobatorioExato && (
                                     <button
                                       type="button"
                                       onClick={() => setEvidenceModalItem(item)}
-                                      className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center gap-1 cursor-pointer"
+                                      className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 transition flex items-center gap-1 cursor-pointer"
                                       title="Ver citação literal extraída do PDF em janela modal"
                                     >
-                                      <Quote className="h-3.5 w-3.5 text-amber-600" />
+                                      <Quote className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                       <span>Ver Citação</span>
                                     </button>
                                   )}
@@ -956,23 +1014,23 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                     className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 border ${
                                       copiedId === item.id
                                         ? 'bg-emerald-600 text-white border-emerald-600'
-                                        : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 border-slate-200'
+                                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-indigo-900 dark:hover:text-indigo-200 border-slate-200 dark:border-slate-700'
                                     }`}
                                     title="Copiar dados para a Calculadora RSC"
                                   >
                                     {copiedId === item.id ? (
                                       <Check className="h-3.5 w-3.5" />
                                     ) : (
-                                      <Copy className="h-3.5 w-3.5 text-indigo-600" />
+                                      <Copy className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                                     )}
                                     <span>{copiedId === item.id ? 'Copiado!' : 'Copiar Dados'}</span>
                                   </button>
 
-                                  {/* Desconsiderar / Mover para Caixa Vermelha (Item 5 solicitado pelo usuário) */}
+                                  {/* Desconsiderar / Mover para Caixa Vermelha */}
                                   <button
                                     type="button"
                                     onClick={() => handleToggleDiscarded(item)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition cursor-pointer"
                                     title="Mover item para Caixa Vermelha (Desconsiderados no final da tela)"
                                   >
                                     <Ban className="h-4 w-4" />
@@ -982,7 +1040,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => setIsEditingItem(item)}
-                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition"
                                     title="Editar Item"
                                   >
                                     <Edit2 className="h-4 w-4" />
@@ -992,7 +1050,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => onDeleteItem(item.id)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition"
                                     title="Excluir Definitivamente"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1002,7 +1060,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
-                                    className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
                                     title="Ver Textos e Justificativas"
                                   >
                                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -1013,11 +1071,11 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
                             {/* Conteúdo Expandido (Textos Complementares A, B, C e Justificativa) */}
                             {isExpanded && (
-                              <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 text-xs bg-slate-50/50 p-4 rounded-xl">
+                              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 text-xs bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-xl">
                                 {/* Trecho Comprobatório Exato: Apenas botão para abrir em janela modal conforme item 4 */}
-                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between gap-3">
-                                  <div className="flex items-center gap-2 text-amber-900">
-                                    <Quote className="h-4 w-4 text-amber-600 shrink-0" />
+                                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl p-3 flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                                    <Quote className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                                     <span>
                                       <strong>Trecho Comprobatório Exato:</strong> Oculto no card para limpeza visual. Disponível para conferência em janela modal.
                                     </span>
@@ -1031,11 +1089,36 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   </button>
                                 </div>
 
+                                {/* O que o documento pretende comprovar no bloco expandido */}
+                                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5 shadow-2xs">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                      <Target className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                      O que o documento pretende comprovar (Finalidade no Processo SEI)
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => copyFieldText(getItemFinalidade(item, userProfile), item.id + '_finalidade_exp')}
+                                      className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition flex items-center gap-1 cursor-pointer ${
+                                        copiedFieldKey === item.id + '_finalidade_exp'
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+                                      }`}
+                                    >
+                                      {copiedFieldKey === item.id + '_finalidade_exp' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                      <span>{copiedFieldKey === item.id + '_finalidade_exp' ? 'Copiado!' : 'Copiar Finalidade'}</span>
+                                    </button>
+                                  </div>
+                                  <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700">
+                                    {getItemFinalidade(item, userProfile)}
+                                  </p>
+                                </div>
+
                                 {/* Justificativa Fundamentada Geral */}
                                 <div className="space-y-1.5">
                                   <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                      <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                      <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                                       Justificativa Fundamentada Geral (Processo SEI)
                                     </label>
                                     <div className="flex items-center space-x-2">
@@ -1043,7 +1126,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                         type="button"
                                         onClick={() => handleTriggerRegen(item)}
                                         disabled={loadingRegenId === item.id}
-                                        className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition flex items-center gap-1 cursor-pointer"
+                                        className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md border border-indigo-200 dark:border-indigo-800 transition flex items-center gap-1 cursor-pointer"
                                       >
                                         <RefreshCw className={`h-3 w-3 ${loadingRegenId === item.id ? 'animate-spin' : ''}`} />
                                         <span>Regerar com IA</span>
@@ -1054,7 +1137,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                         className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition flex items-center gap-1 cursor-pointer ${
                                           copiedJustificationId === item.id
                                             ? 'bg-emerald-600 text-white'
-                                            : 'bg-slate-800 text-white hover:bg-slate-700'
+                                            : 'bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
                                         }`}
                                       >
                                         {copiedJustificationId === item.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -1062,20 +1145,20 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                       </button>
                                     </div>
                                   </div>
-                                  <div className="p-3.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 leading-relaxed font-serif whitespace-pre-line shadow-2xs">
+                                  <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-serif whitespace-pre-line shadow-2xs">
                                     {item.justificationText || 'Sem justificativa gerada.'}
                                   </div>
                                 </div>
 
                                 {/* Textos Complementares A, B e C */}
-                                <div className="space-y-3 pt-2 border-t border-slate-200">
-                                  <h5 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center justify-between">
+                                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-750">
+                                  <h5 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center justify-between">
                                     <span>Textos Complementares Formato SEI</span>
                                     {catGroup.isFamily && (
                                       <button
                                         type="button"
                                         onClick={() => setFamilyModalItems(catGroup.items)}
-                                        className="text-indigo-600 hover:text-indigo-800 font-bold underline"
+                                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold underline"
                                       >
                                         Editar Textos da Família
                                       </button>
@@ -1083,64 +1166,64 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                                   </h5>
 
                                   {/* Bloco A */}
-                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[10px]">A</span>
+                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 rounded font-black text-[10px]">A</span>
                                         Experiência Profissional e Individual Vinculada ao Requisito
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => copyFieldText(item.experienciaProfissionalTexto || '', item.id + '_blocoA')}
-                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
                                         title="Copiar texto A"
                                       >
                                         {copiedFieldKey === item.id + '_blocoA' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                                       </button>
                                     </div>
-                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
                                       {item.experienciaProfissionalTexto || 'Texto não preenchido.'}
                                     </p>
                                   </div>
 
                                   {/* Bloco B */}
-                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-black text-[10px]">B</span>
+                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 rounded font-black text-[10px]">B</span>
                                         Diferencial da Atuação
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => copyFieldText(item.diferencialAtuacaoTexto || '', item.id + '_blocoB')}
-                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
                                         title="Copiar texto B"
                                       >
                                         {copiedFieldKey === item.id + '_blocoB' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                                       </button>
                                     </div>
-                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
                                       {item.diferencialAtuacaoTexto || 'Texto não preenchido.'}
                                     </p>
                                   </div>
 
                                   {/* Bloco C */}
-                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[10px]">C</span>
+                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded font-black text-[10px]">C</span>
                                         Impacto dos Saberes no Cargo e na Instituição
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => copyFieldText(item.impactosSaberesTexto || '', item.id + '_blocoC')}
-                                        className="text-slate-500 hover:text-indigo-600 p-1 text-xs"
+                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
                                         title="Copiar texto C"
                                       >
                                         {copiedFieldKey === item.id + '_blocoC' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                                       </button>
                                     </div>
-                                    <p className="text-slate-700 leading-relaxed text-xs">
+                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
                                       {item.impactosSaberesTexto || 'Texto não preenchido.'}
                                     </p>
                                   </div>
@@ -1161,20 +1244,20 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
       {/* Caixa Vermelha: Itens Desconsiderados / Rejeitados no Final da Tela (Item 5 solicitado pelo usuário) */}
       {discardedItems.length > 0 && (
-        <div className="bg-rose-50/80 border-2 border-rose-300 rounded-2xl p-5 shadow-xs space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-rose-200 pb-3">
+        <div className="bg-rose-50/80 dark:bg-rose-950/30 border-2 border-rose-300 dark:border-rose-900/60 rounded-2xl p-5 shadow-xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-rose-200 dark:border-rose-900/50 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-rose-200 text-rose-800 flex items-center justify-center shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 flex items-center justify-center shrink-0">
                 <Ban className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-rose-950 dark:text-rose-200 flex items-center gap-2">
                   Caixa de Itens Desconsiderados / Rejeitados ({discardedItems.length})
                   <span className="bg-rose-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
                     Excluídos do Cálculo
                   </span>
                 </h3>
-                <p className="text-xs text-rose-800 mt-0.5">
+                <p className="text-xs text-rose-800 dark:text-rose-300/80 mt-0.5">
                   Itens marcados para descarte. Eles não pontuam na Calculadora RSC, mas podem ser restaurados a qualquer momento clicando em "Restaurar".
                 </p>
               </div>
@@ -1185,21 +1268,21 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
             {discardedItems.map((item) => (
               <div
                 key={item.id}
-                className="bg-white border border-rose-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                    <span className="bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-800">
                       {item.categoryCode}
                     </span>
-                    <span className="text-xs font-bold text-slate-800 line-through">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 line-through">
                       {item.title}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span>Arquivo: <strong>{item.documentName || 'Documento Anexo'}</strong></span>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <span>Arquivo: <strong className="text-slate-700 dark:text-slate-300">{item.documentName || 'Documento Anexo'}</strong></span>
                     <span>•</span>
-                    <span>Pontos Desconsiderados: <strong className="text-rose-700">{item.totalScore.toFixed(1)} pts</strong></span>
+                    <span>Pontos Desconsiderados: <strong className="text-rose-700 dark:text-rose-400">{item.totalScore.toFixed(1)} pts</strong></span>
                   </div>
                 </div>
 
@@ -1215,7 +1298,7 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                   <button
                     type="button"
                     onClick={() => onDeleteItem(item.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition"
                     title="Excluir Definitivamente"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -1230,46 +1313,46 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       {/* Modal de Edição de Item */}
       {isEditingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-sm font-bold text-slate-900 pb-2 border-b border-slate-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white pb-2 border-b border-slate-200 dark:border-slate-800">
               Editar Dados do Item na Calculadora RSC
             </h3>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Título da Atividade</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Título da Atividade</label>
                 <input
                   type="text"
                   value={isEditingItem.title}
                   onChange={(e) => setIsEditingItem({ ...isEditingItem, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Órgão Emissor</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Órgão Emissor</label>
                   <input
                     type="text"
                     value={isEditingItem.issuer}
                     onChange={(e) => setIsEditingItem({ ...isEditingItem, issuer: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Data do Documento</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Data do Documento</label>
                   <input
                     type="text"
                     value={isEditingItem.dataDocumento || ''}
                     onChange={(e) => setIsEditingItem({ ...isEditingItem, dataDocumento: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Pontos Unitários</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pontos Unitários</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1282,12 +1365,12 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                         totalScore: pts * isEditingItem.quantity,
                       });
                     }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Quantidade</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Quantidade</label>
                   <input
                     type="number"
                     step="1"
@@ -1300,26 +1383,54 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                         totalScore: isEditingItem.unitPoints * qty,
                       });
                     }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
+              {/* O que o documento pretende comprovar */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Texto da Justificativa</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    O que o documento pretende comprovar (Finalidade no Processo SEI)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingItem({
+                        ...isEditingItem,
+                        finalidadeDocumento: getItemFinalidade(isEditingItem, userProfile),
+                      });
+                    }}
+                    className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold underline cursor-pointer"
+                  >
+                    Sugerir Automaticamente
+                  </button>
+                </div>
+                <textarea
+                  rows={2}
+                  value={isEditingItem.finalidadeDocumento || ''}
+                  onChange={(e) => setIsEditingItem({ ...isEditingItem, finalidadeDocumento: e.target.value })}
+                  placeholder="Ex: Comprovação de atuação em..."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Texto da Justificativa</label>
                 <textarea
                   rows={4}
                   value={isEditingItem.justificationText}
                   onChange={(e) => setIsEditingItem({ ...isEditingItem, justificationText: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg resize-none font-serif"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg resize-none font-serif bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsEditingItem(null)}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition"
                 >
                   Cancelar
                 </button>
@@ -1336,8 +1447,8 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
       )}
 
       {/* Botão de Avançar para o Passo Final */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-        <span className="text-xs text-slate-500">
+      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
           {completedCount} de {totalActiveCount} itens conferidos ({completionPercentage}%)
         </span>
         <button

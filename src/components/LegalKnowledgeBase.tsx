@@ -36,18 +36,18 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-5xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-5xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+            <div className="h-10 w-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 Guia Oficial de Mapeamento, Documentos e Legislação do RSC-PCCTAE
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Regras oficiais do RSC-PCCTAE (Anexos I a VI - Documentos de comprovação, exemplos e observações)
               </p>
             </div>
@@ -56,21 +56,21 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex border-b border-slate-200 space-x-4 text-xs font-semibold overflow-x-auto">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-4 text-xs font-semibold overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('guide')}
-            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
+            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'guide'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
             <FileCheck className="h-4 w-4" />
@@ -80,10 +80,10 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
           <button
             type="button"
             onClick={() => setActiveTab('table')}
-            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
+            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'table'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
             <Table className="h-4 w-4" />
@@ -93,10 +93,10 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
           <button
             type="button"
             onClick={() => setActiveTab('sources')}
-            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
+            className={`pb-2 flex items-center gap-1.5 border-b-2 transition whitespace-nowrap cursor-pointer ${
               activeTab === 'sources'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
             <BookOpen className="h-4 w-4" />
@@ -120,14 +120,14 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Pesquisar por item, documento de comprovação, portaria ou exemplo (ex: I.1, SEI, portaria, PAD)..."
-                  className="w-full pl-10 pr-4 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 />
               </div>
 
               <select
                 value={filterReq}
                 onChange={(e) => setFilterReq(e.target.value)}
-                className="py-2 px-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-slate-700"
+                className="py-2 px-3 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-200"
               >
                 <option value="all">Todos os 6 Requisitos (I a VI)</option>
                 <option value="requisito_1">Requisito I - Conselhos, Comissões e Representação</option>
@@ -142,58 +142,58 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
             {/* List of Categories */}
             <div className="space-y-3">
               {filteredCategories.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs">
+                <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">
                   Nenhum item encontrado com os termos pesquisados.
                 </div>
               ) : (
                 filteredCategories.map((cat) => (
                   <div
                     key={cat.code}
-                    className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5 hover:border-indigo-300 transition"
+                    className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 hover:border-indigo-300 dark:hover:border-indigo-500 transition"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
                       <div className="flex items-center space-x-2">
                         <span className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs">
                           Item {cat.code}
                         </span>
-                        <h3 className="text-xs font-bold text-slate-900">{cat.title}</h3>
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white">{cat.title}</h3>
                       </div>
-                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100 self-start sm:self-auto">
+                      <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800 self-start sm:self-auto">
                         {cat.legalRef}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600">{cat.description}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">{cat.description}</p>
 
                     {cat.documentosComprovacao && (
-                      <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-lg text-xs space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-emerald-900">
-                          <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
+                          <FileText className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>Documentos de Comprovação Exigidos:</span>
                         </div>
-                        <p className="text-emerald-800 leading-relaxed text-[11px]">
+                        <p className="text-emerald-800 dark:text-emerald-300/90 leading-relaxed text-[11px]">
                           {cat.documentosComprovacao}
                         </p>
                       </div>
                     )}
 
                     {cat.exemplos && (
-                      <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-lg text-xs space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-blue-900">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                      <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-xs space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                           <span>Exemplos Práticos Aceitos:</span>
                         </div>
-                        <p className="text-blue-800 leading-relaxed text-[11px]">{cat.exemplos}</p>
+                        <p className="text-blue-800 dark:text-blue-300/90 leading-relaxed text-[11px]">{cat.exemplos}</p>
                       </div>
                     )}
 
                     {cat.observacoes && (
-                      <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-xs space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                          <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                      <div className="p-2.5 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-xs space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                           <span>Observações & Regras Específicas:</span>
                         </div>
-                        <p className="text-amber-800 leading-relaxed text-[11px]">
+                        <p className="text-amber-800 dark:text-amber-300/90 leading-relaxed text-[11px]">
                           {cat.observacoes}
                         </p>
                       </div>
@@ -213,7 +213,7 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Pesquisar por lei, portaria, tabela ou diretriz..."
-                className="w-full pl-10 pr-4 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-10 pr-4 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               />
             </div>
 
@@ -225,22 +225,22 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3.5 bg-slate-50 hover:bg-indigo-50/40 border border-slate-200 hover:border-indigo-200 rounded-xl transition group block"
+                  className="p-3.5 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50/40 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500 rounded-xl transition group block"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold">
                           {item.badge}
                         </span>
-                        <h3 className="text-xs font-bold text-slate-900 group-hover:text-indigo-900">
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-900 dark:group-hover:text-indigo-400">
                           {item.title}
                         </h3>
                       </div>
-                      <p className="text-[11px] text-slate-500">{item.description}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{item.description}</p>
                     </div>
 
-                    <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-1 transition" />
+                    <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 shrink-0 mt-1 transition" />
                   </div>
                 </a>
               ))}
@@ -249,11 +249,11 @@ export const LegalKnowledgeBase: React.FC<LegalKnowledgeBaseProps> = ({ isOpen, 
         )}
 
         {/* Footer */}
-        <div className="pt-3 border-t border-slate-100 flex justify-end">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-slate-900 text-white font-semibold rounded-xl text-xs hover:bg-slate-800 transition"
+            className="px-5 py-2 bg-slate-900 dark:bg-slate-800 text-white font-semibold rounded-xl text-xs hover:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer"
           >
             Fechar
           </button>

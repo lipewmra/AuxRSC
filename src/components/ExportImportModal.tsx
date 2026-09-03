@@ -85,8 +85,8 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-md w-full p-6 space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2.5">
             <div
               className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-white ${
@@ -95,7 +95,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             >
               {mode === 'export' ? <Download className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
             </div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
               {mode === 'export' ? 'Salvar Sessão em Arquivo JSON' : 'Importar Sessão Salva (JSON)'}
             </h2>
           </div>
@@ -103,7 +103,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -111,13 +111,13 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
         {mode === 'export' ? (
           <div className="space-y-4">
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Exporta os dados cadastrais do servidor, a lista de documentos em PDF, as categorias mapeadas na Calculadora RSC e os textos das justificativas fundamentadas para um arquivo <strong className="text-slate-900">JSON</strong> local.
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Exporta os dados cadastrais do servidor, a lista de documentos em PDF, as categorias mapeadas na Calculadora RSC e os textos das justificativas fundamentadas para um arquivo <strong className="text-slate-900 dark:text-white">JSON</strong> local.
             </p>
 
-            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 space-y-1">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
               <span className="font-semibold block">Conteúdo da Sessão Atual:</span>
-              <ul className="list-disc pl-4 text-[11px] space-y-0.5 text-indigo-800">
+              <ul className="list-disc pl-4 text-[11px] space-y-0.5 text-indigo-800 dark:text-indigo-300">
                 <li>Servidor: {currentSession.userProfile.nomeCompleto || 'Sem Nome'}</li>
                 <li>RSC Almejado: {currentSession.userProfile.rscAlmejado}</li>
                 <li>Itens Mapeados: {currentSession.rscItems.length} itens</li>
@@ -136,8 +136,8 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Selecione o arquivo <strong className="text-slate-900">.json</strong> salvo anteriormente para restaurar a sessão inteira do Organizador RSC sem perda de informações.
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Selecione o arquivo <strong className="text-slate-900 dark:text-white">.json</strong> salvo anteriormente para restaurar a sessão inteira do Organizador RSC sem perda de informações.
             </p>
 
             <input
@@ -150,22 +150,22 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/20 rounded-xl p-6 text-center cursor-pointer transition"
+              className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50/20 dark:hover:bg-slate-800 rounded-xl p-6 text-center cursor-pointer transition"
             >
-              <FileCode className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <p className="text-xs font-semibold text-slate-800">Clique para selecionar o arquivo .json</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Sessao_RSC_*.json</p>
+              <FileCode className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Clique para selecionar o arquivo .json</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Sessao_RSC_*.json</p>
             </div>
 
             {importError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
                 <span>{importError}</span>
               </div>
             )}
 
             {importSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                 <span>Sessão restaurada com sucesso!</span>
               </div>
