@@ -5,7 +5,7 @@ import { checkDocumentPriorToEntryDate, getItemEffectiveDate, formatDateDisplay 
 import { EvidenceQuoteModal } from './EvidenceQuoteModal';
 import { AnalysisReportModal } from './AnalysisReportModal';
 import { FamilyTextConsolidationModal } from './FamilyTextConsolidationModal';
-import { ConsolidatedFamilyTexts } from '../utils/textConsolidation';
+import { ConsolidatedFamilyTexts, consolidateFamilyTextsLocal } from '../utils/textConsolidation';
 import {
   LayoutGrid,
   Plus,
@@ -241,6 +241,28 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
         isFamilyConsolidated: true,
       });
     });
+  };
+
+  // Obtém ou gera automaticamente os textos consolidados A, B e C para famílias com mais de 1 documento
+  const getFamilyConsolidatedTexts = (items: RSCItem[]): ConsolidatedFamilyTexts => {
+    const withText = items.find((i) => i.isFamilyConsolidated && i.experienciaProfissionalTexto);
+    if (withText && withText.experienciaProfissionalTexto) {
+      return {
+        experienciaProfissionalTexto: withText.experienciaProfissionalTexto,
+        diferencialAtuacaoTexto: withText.diferencialAtuacaoTexto || '',
+        impactosSaberesTexto: withText.impactosSaberesTexto || '',
+        sourceCount: items.length,
+      };
+    }
+    return consolidateFamilyTextsLocal(items, userProfile);
+  };
+
+  const handleCopyAllFamilyTexts = (items: RSCItem[], categoryCode: string) => {
+    const texts = getFamilyConsolidatedTexts(items);
+    const fullText = `[CRITÉRIO ${categoryCode} - CONSOLIDAÇÃO DOS ITENS A, B E C NO FINAL DO BLOCO]\n\n(A) EXPERIÊNCIA PROFISSIONAL E INDIVIDUAL:\n${texts.experienciaProfissionalTexto}\n\n(B) DIFERENCIAL DA ATUAÇÃO:\n${texts.diferencialAtuacaoTexto}\n\n(C) IMPACTO DOS SABERES NO CARGO E NA INSTITUIÇÃO:\n${texts.impactosSaberesTexto}`;
+    navigator.clipboard.writeText(fullText);
+    setCopiedFieldKey('family_all_' + categoryCode);
+    setTimeout(() => setCopiedFieldKey(null), 2000);
   };
 
   const handleCopyParams = (item: RSCItem) => {
@@ -1152,81 +1174,91 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
 
                                 {/* Textos Complementares A, B e C */}
                                 <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-750">
-                                  <h5 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center justify-between">
-                                    <span>Textos Complementares Formato SEI</span>
-                                    {catGroup.isFamily && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setFamilyModalItems(catGroup.items)}
-                                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold underline"
-                                      >
-                                        Editar Textos da Família
-                                      </button>
-                                    )}
-                                  </h5>
-
-                                  {/* Bloco A */}
-                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 rounded font-black text-[10px]">A</span>
-                                        Experiência Profissional e Individual Vinculada ao Requisito
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => copyFieldText(item.experienciaProfissionalTexto || '', item.id + '_blocoA')}
-                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
-                                        title="Copiar texto A"
-                                      >
-                                        {copiedFieldKey === item.id + '_blocoA' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                                      </button>
+                                  {catGroup.isFamily ? (
+                                    <div className="p-3.5 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-1.5">
+                                      <div className="flex items-start gap-2.5">
+                                        <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                                        <div>
+                                          <h6 className="font-bold text-xs text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
+                                            <span>Itens A, B e C Consolidados no Final do Bloco</span>
+                                            <span className="px-1.5 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-900 dark:text-indigo-100 rounded text-[10px]">Família</span>
+                                          </h6>
+                                          <p className="text-xs text-indigo-900/80 dark:text-indigo-300 mt-0.5 leading-relaxed">
+                                            Como há mais de 1 documento inserido neste critério ({catGroup.items.length} comprovantes), os itens A (Experiência Profissional), B (Diferencial de Atuação) e C (Impactos dos Saberes) de cada documento foram unificados e consolidados no final do bloco deste critério para protocolo único no SEI.
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                      {item.experienciaProfissionalTexto || 'Texto não preenchido.'}
-                                    </p>
-                                  </div>
+                                  ) : (
+                                    <>
+                                      <h5 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center justify-between">
+                                        <span>Textos Complementares Formato SEI</span>
+                                      </h5>
 
-                                  {/* Bloco B */}
-                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 rounded font-black text-[10px]">B</span>
-                                        Diferencial da Atuação
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => copyFieldText(item.diferencialAtuacaoTexto || '', item.id + '_blocoB')}
-                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
-                                        title="Copiar texto B"
-                                      >
-                                        {copiedFieldKey === item.id + '_blocoB' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                                      </button>
-                                    </div>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                      {item.diferencialAtuacaoTexto || 'Texto não preenchido.'}
-                                    </p>
-                                  </div>
+                                      {/* Bloco A */}
+                                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 rounded font-black text-[10px]">A</span>
+                                            Experiência Profissional e Individual Vinculada ao Requisito
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => copyFieldText(item.experienciaProfissionalTexto || '', item.id + '_blocoA')}
+                                            className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
+                                            title="Copiar texto A"
+                                          >
+                                            {copiedFieldKey === item.id + '_blocoA' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                          </button>
+                                        </div>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                                          {item.experienciaProfissionalTexto || 'Texto não preenchido.'}
+                                        </p>
+                                      </div>
 
-                                  {/* Bloco C */}
-                                  <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                        <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded font-black text-[10px]">C</span>
-                                        Impacto dos Saberes no Cargo e na Instituição
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => copyFieldText(item.impactosSaberesTexto || '', item.id + '_blocoC')}
-                                        className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
-                                        title="Copiar texto C"
-                                      >
-                                        {copiedFieldKey === item.id + '_blocoC' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                                      </button>
-                                    </div>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                      {item.impactosSaberesTexto || 'Texto não preenchido.'}
-                                    </p>
-                                  </div>
+                                      {/* Bloco B */}
+                                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 rounded font-black text-[10px]">B</span>
+                                            Diferencial da Atuação
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => copyFieldText(item.diferencialAtuacaoTexto || '', item.id + '_blocoB')}
+                                            className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
+                                            title="Copiar texto B"
+                                          >
+                                            {copiedFieldKey === item.id + '_blocoB' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                          </button>
+                                        </div>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                                          {item.diferencialAtuacaoTexto || 'Texto não preenchido.'}
+                                        </p>
+                                      </div>
+
+                                      {/* Bloco C */}
+                                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded font-black text-[10px]">C</span>
+                                            Impacto dos Saberes no Cargo e na Instituição
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => copyFieldText(item.impactosSaberesTexto || '', item.id + '_blocoC')}
+                                            className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 text-xs"
+                                            title="Copiar texto C"
+                                          >
+                                            {copiedFieldKey === item.id + '_blocoC' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                          </button>
+                                        </div>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                                          {item.impactosSaberesTexto || 'Texto não preenchido.'}
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -1234,6 +1266,167 @@ export const RscCalculatorOrganizer: React.FC<RscCalculatorOrganizerProps> = ({
                         );
                       })}
                     </div>
+
+                    {/* Bloco Consolidado no Final da Categoria para Famílias com mais de 1 documento */}
+                    {catGroup.isFamily && (() => {
+                      const familyTexts = getFamilyConsolidatedTexts(catGroup.items);
+                      return (
+                        <div className="bg-indigo-50/40 dark:bg-indigo-950/30 border-t-2 border-indigo-200 dark:border-indigo-800/80 p-4 sm:p-5 space-y-4">
+                          {/* Notificação Informativa Solicitada */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 bg-indigo-600 text-white rounded-lg shrink-0 mt-0.5 shadow-2xs">
+                                <Layers className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h5 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                                    Consolidação dos Itens A, B e C (Critério {catGroup.categoryCode})
+                                  </h5>
+                                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-300 dark:border-emerald-800">
+                                    {catGroup.items.length} comprovantes unidos
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                                  <strong>Atenção:</strong> Os itens A, B e C de cada documento foram consolidados no final do bloco deste critério ({catGroup.items.length} documentos) para inclusão direta no processo SEI, respeitando rigorosamente os limites de caracteres.
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Botões de Ação */}
+                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                              <button
+                                type="button"
+                                onClick={() => setFamilyModalItems(catGroup.items)}
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                                title="Editar ou harmonizar os textos com IA"
+                              >
+                                <Sparkles className="h-3.5 w-3.5" />
+                                <span>Editar / Harmonizar</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyAllFamilyTexts(catGroup.items, catGroup.categoryCode)}
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold rounded-lg transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                                title="Copiar todos os blocos consolidados"
+                              >
+                                {copiedFieldKey === 'family_all_' + catGroup.categoryCode ? (
+                                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                                <span>{copiedFieldKey === 'family_all_' + catGroup.categoryCode ? 'Copiado!' : 'Copiar A, B e C'}</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Grid com os 3 blocos A, B e C consolidados */}
+                          <div className="space-y-3">
+                            {/* Bloco A Consolidado */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded font-black text-xs">
+                                    A
+                                  </span>
+                                  <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                    Experiência Profissional e Individual Vinculada ao Requisito (Consolidada)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                    {familyTexts.experienciaProfissionalTexto.length}/1500 caracteres
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyFieldText(familyTexts.experienciaProfissionalTexto, 'fam_blocoA_' + catGroup.categoryCode)}
+                                    className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded transition cursor-pointer"
+                                    title="Copiar Bloco A Consolidado"
+                                  >
+                                    {copiedFieldKey === 'fam_blocoA_' + catGroup.categoryCode ? (
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed font-sans bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-750">
+                                {familyTexts.experienciaProfissionalTexto}
+                              </p>
+                            </div>
+
+                            {/* Bloco B Consolidado */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded font-black text-xs">
+                                    B
+                                  </span>
+                                  <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                    Diferencial da Atuação (Consolidado)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                    {familyTexts.diferencialAtuacaoTexto.length}/600 caracteres
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyFieldText(familyTexts.diferencialAtuacaoTexto, 'fam_blocoB_' + catGroup.categoryCode)}
+                                    className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded transition cursor-pointer"
+                                    title="Copiar Bloco B Consolidado"
+                                  >
+                                    {copiedFieldKey === 'fam_blocoB_' + catGroup.categoryCode ? (
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-750">
+                                {familyTexts.diferencialAtuacaoTexto}
+                              </p>
+                            </div>
+
+                            {/* Bloco C Consolidado */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded font-black text-xs">
+                                    C
+                                  </span>
+                                  <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                    Impacto dos Saberes no Cargo e na Instituição (Consolidado)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                    {familyTexts.impactosSaberesTexto.length}/600 caracteres
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyFieldText(familyTexts.impactosSaberesTexto, 'fam_blocoC_' + catGroup.categoryCode)}
+                                    className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded transition cursor-pointer"
+                                    title="Copiar Bloco C Consolidado"
+                                  >
+                                    {copiedFieldKey === 'fam_blocoC_' + catGroup.categoryCode ? (
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-750">
+                                {familyTexts.impactosSaberesTexto}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>

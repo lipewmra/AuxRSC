@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RSCItem, UserProfile } from '../types';
 import { RSC_REQUIREMENTS, evaluateRSCCompliance } from '../data/rscStructure';
 import { getApiHeaders, getStoredGeminiApiKey } from '../utils/apiKey';
+import { calculateServiceTimeFromEntryDate, formatDateDisplay } from '../utils/dateValidation';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -71,7 +72,13 @@ export const buildConsolidatedLifeHistoryMemorial = (
   const producoes = activeItems.filter((i) => i.directiveId === 'requisito_6').map((i) => i.title);
 
   // 1. Ingresso e compromisso com o serviço público
-  const p1 = `O(A) servidor(a) ${nome} ingressou no serviço público em ${trajetoriaData.dataIngresso}, no cargo de ${cargo} (Nível de Classificação ${nivel}), lotado(a) no(a) ${lotacao}, totalizando ${trajetoriaData.tempoServico} de contínuo e dedicado exercício público. Ao longo de sua trajetória funcional, consolidou sólida atuação nos setores de ${trajetoriaData.setoresAtuacao}, assumindo encargos técnicos e operacionais de contínua responsabilidade institucional.`;
+  const calcServico = calculateServiceTimeFromEntryDate(trajetoriaData.dataIngresso);
+  const rawTempo = trajetoriaData.tempoServico && trajetoriaData.tempoServico.trim()
+    ? trajetoriaData.tempoServico
+    : (calcServico.valid ? calcServico.formattedText : 'sua trajetória');
+  const tempoServicoFormatado = rawTempo.replace(/(de|em)?\s*efetivo\s*exerc[íi]cio/gi, '').trim();
+
+  const p1 = `O(A) servidor(a) ${nome} ingressou no serviço público em ${trajetoriaData.dataIngresso}, no cargo de ${cargo} (Nível de Classificação ${nivel}), lotado(a) no(a) ${lotacao}, totalizando ${tempoServicoFormatado || 'sua trajetória'} de contínuo e dedicado exercício público. Ao longo de sua trajetória funcional, consolidou sólida atuação nos setores de ${trajetoriaData.setoresAtuacao}, assumindo encargos técnicos e operacionais de contínua responsabilidade institucional.`;
 
   // 2. Trajetória cotidiana e competências
   const areasStr =
@@ -143,11 +150,38 @@ export const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({
   const [copiedFieldKey, setCopiedFieldKey] = useState<string | null>(null);
   const [showFullMemorial, setShowFullMemorial] = useState<boolean>(false);
 
-  // Form Trajectory Fields
-  const [dataIngresso, setDataIngresso] = useState<string>(
-    userProfile.dataIngressoServicoPublico || userProfile.dataExercicio || '01/03/2012'
-  );
-  const [tempoServico, setTempoServico] = useState<string>('14 anos em efetivo exercício');
+  // Form Trajectory Fields - Cálculo exclusivo baseado na data de ingresso no serviço público
+  const rawEntryDate = userProfile.dataIngressoServicoPublico || userProfile.dataExercicio || '';
+  const initialDataIngresso = rawEntryDate 
+    ? (formatDateDisplay(rawEntryDate) !== 'Não informada' ? formatDateDisplay(rawEntryDate) : rawEntryDate)
+    : '01/03/2012';
+
+  const initialCalc = calculateServiceTimeFromEntryDate(initialDataIngresso);
+  const initialTempoServico = initialCalc.valid ? initialCalc.formattedText : '14 anos';
+
+  const [dataIngresso, setDataIngresso] = useState<string>(initialDataIngresso);
+  const [tempoServico, setTempoServico] = useState<string>(initialTempoServico);
+
+  const handleDataIngressoChange = (newDate: string) => {
+    setDataIngresso(newDate);
+    const calc = calculateServiceTimeFromEntryDate(newDate);
+    if (calc.valid) {
+      setTempoServico(calc.formattedText);
+    }
+  };
+
+  useEffect(() => {
+    const raw = userProfile.dataIngressoServicoPublico || userProfile.dataExercicio;
+    if (raw) {
+      const formatted = formatDateDisplay(raw) !== 'Não informada' ? formatDateDisplay(raw) : raw;
+      setDataIngresso(formatted);
+      const calc = calculateServiceTimeFromEntryDate(raw);
+      if (calc.valid) {
+        setTempoServico(calc.formattedText);
+      }
+    }
+  }, [userProfile.dataIngressoServicoPublico, userProfile.dataExercicio]);
+
   const [setoresAtuacao, setSetoresAtuacao] = useState<string>('Secretaria Acadêmica, Comissão Permanente de Licitação, Coordenação Geral');
   const [selectedAreas, setSelectedAreas] = useState<string[]>([
     'Gestão e Atendimento Discente / Acadêmico',
@@ -571,10 +605,13 @@ ${userProfile.nomeCompleto || 'Assinatura do Servidor'}`;
             <input
               type="text"
               value={dataIngresso}
-              onChange={(e) => setDataIngresso(e.target.value)}
+              onChange={(e) => handleDataIngressoChange(e.target.value)}
               placeholder="Ex: 01/03/2012"
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Data oficial de ingresso no serviço público.
+            </p>
           </div>
 
           {/* Tempo de Serviço */}
@@ -584,22 +621,38 @@ ${userProfile.nomeCompleto || 'Assinatura do Servidor'}`;
                 <UserCheck className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                 Tempo de Efetivo Exercício
               </label>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(tempoServico, 'tempoServico')}
-                className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition cursor-pointer"
-                title="Copiar Tempo de Serviço"
-              >
-                {copiedFieldKey === 'tempoServico' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const calc = calculateServiceTimeFromEntryDate(dataIngresso);
+                    if (calc.valid) setTempoServico(calc.formattedText);
+                  }}
+                  className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition cursor-pointer"
+                  title="Recalcular tempo de serviço a partir da data de ingresso"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(tempoServico, 'tempoServico')}
+                  className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition cursor-pointer"
+                  title="Copiar Tempo de Serviço"
+                >
+                  {copiedFieldKey === 'tempoServico' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </div>
             </div>
             <input
               type="text"
               value={tempoServico}
               onChange={(e) => setTempoServico(e.target.value)}
-              placeholder="Ex: 14 anos em efetivo exercício"
+              placeholder="Ex: 14 anos e 6 meses"
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
+            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
+              Calculado com base exclusiva na data de ingresso ({dataIngresso}).
+            </p>
           </div>
 
           {/* Unidades e Setores */}

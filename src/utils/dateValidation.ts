@@ -211,3 +211,109 @@ export function getItemEffectiveDate(item: {
   if (item.startDate && item.startDate.trim()) return item.startDate.trim();
   return undefined;
 }
+
+export interface ServiceTimeResult {
+  years: number;
+  months: number;
+  days: number;
+  formattedText: string;
+  formattedYearsOnly: string;
+  summarySentence: string;
+  valid: boolean;
+}
+
+/**
+ * Calcula o tempo de serviço com base exclusiva na data de ingresso no serviço público.
+ * 
+ * @param entryDateStr Data de ingresso no serviço público informada no perfil (YYYY-MM-DD ou DD/MM/YYYY)
+ * @param referenceDateStr Data de referência para o cálculo (opcional; padrão é a data atual)
+ */
+export function calculateServiceTimeFromEntryDate(
+  entryDateStr?: string | null,
+  referenceDateStr?: string | null
+): ServiceTimeResult {
+  if (!entryDateStr || !entryDateStr.trim()) {
+    return {
+      years: 0,
+      months: 0,
+      days: 0,
+      formattedText: '0 anos',
+      formattedYearsOnly: '0 anos',
+      summarySentence: 'tempo de serviço a calcular',
+      valid: false,
+    };
+  }
+
+  const startDate = parseDateFlexible(entryDateStr);
+  if (!startDate || isNaN(startDate.getTime())) {
+    return {
+      years: 0,
+      months: 0,
+      days: 0,
+      formattedText: '0 anos',
+      formattedYearsOnly: '0 anos',
+      summarySentence: 'data de ingresso não identificada',
+      valid: false,
+    };
+  }
+
+  const endDate = referenceDateStr ? (parseDateFlexible(referenceDateStr) || new Date()) : new Date();
+
+  // Se a data de ingresso for posterior à data de referência
+  if (startDate.getTime() > endDate.getTime()) {
+    return {
+      years: 0,
+      months: 0,
+      days: 0,
+      formattedText: '0 anos',
+      formattedYearsOnly: '0 anos',
+      summarySentence: 'data de ingresso futura',
+      valid: false,
+    };
+  }
+
+  let years = endDate.getFullYear() - startDate.getFullYear();
+  let months = endDate.getMonth() - startDate.getMonth();
+  let days = endDate.getDate() - startDate.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonthLastDay = new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate();
+    days += prevMonthLastDay;
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  if (years < 0) {
+    years = 0;
+    months = 0;
+    days = 0;
+  }
+
+  let formattedText = '';
+  if (years > 0 && months > 0) {
+    formattedText = `${years} ${years === 1 ? 'ano' : 'anos'} e ${months} ${months === 1 ? 'mês' : 'meses'}`;
+  } else if (years > 0) {
+    formattedText = `${years} ${years === 1 ? 'ano' : 'anos'}`;
+  } else if (months > 0) {
+    formattedText = `${months} ${months === 1 ? 'mês' : 'meses'}`;
+  } else {
+    formattedText = `${days} ${days === 1 ? 'dia' : 'dias'}`;
+  }
+
+  const formattedYearsOnly = `${years} ${years === 1 ? 'ano' : 'anos'}`;
+  const summarySentence = `${formattedText} de efetivo exercício no serviço público`;
+
+  return {
+    years,
+    months,
+    days,
+    formattedText,
+    formattedYearsOnly,
+    summarySentence,
+    valid: true,
+  };
+}

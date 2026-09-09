@@ -76,6 +76,17 @@ export default function App() {
     localStorage.setItem('rsc_font_size', fontSize);
   }, [fontSize]);
 
+  // 1- Quando mudar de página sempre levar a visualização para o topo da página
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 0;
+    }
+    if (document.body) {
+      document.body.scrollTop = 0;
+    }
+  }, [activeStep]);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
