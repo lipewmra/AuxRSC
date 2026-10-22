@@ -100,15 +100,11 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
                   : 'bg-white text-[#132247] border-slate-300 hover:bg-[#FEF0B2]/60 hover:border-[#EAA816] dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700'
               }`}
-              title="Configurar Chave de API Google Gemini"
+              title="Status da Conexão e Configuração da Chave Gemini Flash"
             >
               <KeyRound className={`h-3.5 w-3.5 shrink-0 ${hasCustomKey ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#132247] dark:text-[#FEF0B2]'}`} />
-              <span className="hidden xs:inline">Chave IA</span>
-              {hasCustomKey ? (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              ) : (
-                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">•</span>
-              )}
+              <span className="hidden xs:inline">{hasCustomKey ? 'IA Conectada' : 'Chave IA'}</span>
+              <span className={`w-2 h-2 rounded-full ${hasCustomKey ? 'bg-emerald-500 animate-pulse' : 'bg-emerald-400'}`} title="Serviço Gemini Flash Ativo" />
             </button>
 
             {/* Importar Dados */}

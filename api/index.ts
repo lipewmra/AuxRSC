@@ -37,8 +37,8 @@ function getGeminiClient(req?: express.Request): GoogleGenAI {
   });
 }
 
-// Helper function to execute Gemini requests with fallback models and retry on transient errors (429 / 503)
-// Prioriza o modelo mais econômico e rápido (gemini-3.1-flash-lite), com fallback sequencial para gemini-3.8-flash e gemini-flash-latest
+// Helper function to execute Gemini requests with fallback models and fast-failover on transient errors (429 / 503)
+// Cascata de resiliência: gemini-3.5-flash (alta velocidade e estabilidade), gemini-3.8-flash (padrão oficial), gemini-3.6-flash, gemini-3.1-flash-lite e gemini-flash-latest
 async function callGeminiWithFallback(
   ai: GoogleGenAI,
   params: {
@@ -46,58 +46,64 @@ async function callGeminiWithFallback(
     config?: any;
   }
 ): Promise<{ response: any; modelUsed: string }> {
-  const models = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
-  const maxRetriesPerModel = 3;
+  const models = [
+    'gemini-3.5-flash',
+    'gemini-3.8-flash',
+    'gemini-3.6-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
+  ];
   let lastError: any = null;
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
-    for (let attempt = 0; attempt < maxRetriesPerModel; attempt++) {
+    // Tenta no máximo 2 vezes por modelo para não reter o usuário se o servidor estiver sobrecarregado
+    const maxAttempts = 2;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        console.log(`[Gemini API] Executando requisição com o modelo ${model} (tentativa ${attempt + 1}/${maxRetriesPerModel})...`);
+        console.log(`[Gemini API] Executando requisição com ${model} (tentativa ${attempt + 1}/${maxAttempts})...`);
         const response = await ai.models.generateContent({
           model,
           contents: params.contents,
           config: params.config,
         });
+        console.log(`[Gemini API] Sucesso na resposta do modelo ${model}`);
         return { response, modelUsed: model };
       } catch (err: any) {
         lastError = err;
         const errString = String(err?.message || err);
-        const isTransientError =
-          errString.includes('429') ||
+        const is503HighDemand =
           errString.includes('503') ||
-          errString.includes('RESOURCE_EXHAUSTED') ||
           errString.includes('UNAVAILABLE') ||
-          errString.includes('high demand') ||
+          errString.includes('high demand');
+        const is429RateLimit =
+          errString.includes('429') ||
+          errString.includes('RESOURCE_EXHAUSTED') ||
           errString.includes('Quota exceeded') ||
           errString.includes('rate limit');
 
         console.warn(
-          `[Gemini API] Modelo ${model} (tentativa ${attempt + 1}/${maxRetriesPerModel}) falhou:`,
-          errString
+          `[Gemini API] Modelo ${model} falhou (tentativa ${attempt + 1}/${maxAttempts}): ${errString.slice(0, 150)}`
         );
 
-        if (isTransientError) {
-          if (attempt < maxRetriesPerModel - 1) {
-            // Exponential backoff: ~3s on 1st retry, ~6s on 2nd retry
-            const backoffMs = Math.pow(2, attempt) * 3000 + Math.floor(Math.random() * 1000);
-            console.log(
-              `[Gemini API] Aguardando ${Math.round(backoffMs / 1000)}s antes de tentar novamente devido a cota/demanda...`
-            );
-            await new Promise((resolve) => setTimeout(resolve, backoffMs));
-            continue;
-          }
-        } else {
-          // Non-transient error: stop retrying this model and advance to next fallback
-          break;
+        // Se for 503 (servidor daquele modelo sob alta demanda no Google),
+        // NÃO gastamos tempo fazendo retry longo no mesmo modelo: alternamos imediatamente para o próximo modelo da fila!
+        if (is503HighDemand) {
+          console.log(`[Gemini API] Modelo ${model} em alta demanda (503). Alternando imediatamente para o próximo modelo de fallback...`);
+          break; // Sai do loop deste modelo e vai direto para o próximo
         }
+
+        // Se for 429 (cota momentânea de requisições por segundo), espera 1.2s antes da segunda tentativa
+        if (is429RateLimit && attempt < maxAttempts - 1) {
+          console.log('[Gemini API] Cota temporária atingida (429). Aguardando 1.2s...');
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          continue;
+        }
+
+        // Outros erros não transitórios (ex: payload inválido): interrompe e tenta próximo modelo se houver
+        break;
       }
-    }
-    // Pause briefly before switching to fallback model if transient error persisted
-    if (i < models.length - 1) {
-      console.log(`[Gemini API] Alternando para o próximo modelo de fallback: ${models[i + 1]}...`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 
@@ -108,6 +114,109 @@ async function callGeminiWithFallback(
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Endpoint: Diagnóstico de Conexão e Status dos Modelos Gemini Flash em Tempo Real
+const handleGeminiStatus = async (req: express.Request, res: express.Response) => {
+  const startTime = Date.now();
+  try {
+    const customKey =
+      (req.headers['x-gemini-api-key'] as string) ||
+      (req.headers['authorization'] as string)?.replace(/^Bearer\s+/i, '');
+    const hasKey = !!(customKey || process.env.GEMINI_API_KEY);
+    const keySource = customKey
+      ? 'Chave Pessoal (Navegador)'
+      : process.env.GEMINI_API_KEY
+      ? 'Chave Integrada do Sistema (Servidor)'
+      : 'Nenhuma chave configurada';
+
+    if (!hasKey) {
+      return res.json({
+        connected: false,
+        status: 'no_key',
+        message: 'Nenhuma chave de API configurada. Cadastre sua GEMINI_API_KEY no menu superior.',
+        keySource,
+        modelsChecked: [],
+      });
+    }
+
+    const ai = getGeminiClient(req);
+    const testModels = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.1-flash-lite'];
+    const results: Array<{
+      model: string;
+      status: 'online' | 'high_demand_503' | 'rate_limit_429' | 'error';
+      latencyMs?: number;
+      error?: string;
+    }> = [];
+
+    let operationalModel: string | null = null;
+    let minLatency = 999999;
+
+    for (const model of testModels) {
+      const t0 = Date.now();
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: 'Ping: Responda apenas "PONG"',
+        });
+        const elapsed = Date.now() - t0;
+        const text = response.text?.trim() || '';
+        results.push({
+          model,
+          status: 'online',
+          latencyMs: elapsed,
+        });
+        if (!operationalModel || elapsed < minLatency) {
+          operationalModel = model;
+          minLatency = elapsed;
+        }
+        // Se encontramos um modelo operacional com latência rápida (< 3s), encerramos a checagem
+        if (operationalModel && minLatency < 3000) {
+          break;
+        }
+      } catch (err: any) {
+        const errStr = String(err?.message || err);
+        let st: 'online' | 'high_demand_503' | 'rate_limit_429' | 'error' = 'error';
+        if (errStr.includes('503') || errStr.includes('UNAVAILABLE') || errStr.includes('high demand')) {
+          st = 'high_demand_503';
+        } else if (errStr.includes('429') || errStr.includes('RESOURCE_EXHAUSTED')) {
+          st = 'rate_limit_429';
+        }
+        results.push({
+          model,
+          status: st,
+          error: errStr.slice(0, 100),
+        });
+      }
+    }
+
+    const isConnected = !!operationalModel;
+
+    return res.json({
+      connected: isConnected,
+      status: isConnected ? 'online' : 'degraded',
+      activeModel: operationalModel || 'Nenhum modelo responsivo no momento',
+      latencyMs: operationalModel ? minLatency : Date.now() - startTime,
+      keySource,
+      message: isConnected
+        ? `Conexão com a família Gemini Flash operacional! Modelo ativo em resposta: ${operationalModel} (${minLatency}ms).`
+        : 'Os modelos Gemini Flash reportaram alta demanda temporária (503/429) no Google. O sistema continuará tentando em contingência.',
+      modelsChecked: results,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      connected: false,
+      status: 'error',
+      message: `Erro ao testar conexão com o Gemini: ${error?.message || error}`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+};
+
+router.get('/gemini-status', handleGeminiStatus);
+router.post('/gemini-status', handleGeminiStatus);
+router.get('/gemini/status', handleGeminiStatus);
+router.post('/gemini/status', handleGeminiStatus);
 
 // Endpoint: Analyze PDF document for RSC Calculator mapping
 router.post('/analyze-pdf', async (req, res) => {
@@ -291,7 +400,7 @@ Para cada documento, preencha obrigatoriamente:
       motivo_rejeicao: parsed.motivo_rejeicao || '',
       items,
       summary: parsed.summary || 'Análise concluída.',
-      modelUsed: modelUsed || 'gemini-3.1-flash-lite',
+      modelUsed: modelUsed || 'gemini-3.5-flash',
     });
   } catch (error: any) {
     console.error('Erro na análise de PDF com Gemini:', error);

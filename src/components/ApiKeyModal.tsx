@@ -13,6 +13,9 @@ import {
   AlertTriangle,
   HelpCircle,
   ArrowRight,
+  Activity,
+  RefreshCw,
+  Wifi,
 } from 'lucide-react';
 import { getStoredGeminiApiKey, setStoredGeminiApiKey, removeStoredGeminiApiKey } from '../utils/apiKey';
 
@@ -33,6 +36,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [showKey, setShowKey] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [hasStoredKey, setHasStoredKey] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    connected: boolean;
+    activeModel?: string;
+    latencyMs?: number;
+    message?: string;
+    keySource?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -40,8 +51,37 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       setApiKeyInput(currentKey);
       setHasStoredKey(!!currentKey);
       setSavedSuccess(false);
+      setTestResult(null);
     }
   }, [isOpen]);
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const keyToTest = apiKeyInput.trim() || getStoredGeminiApiKey();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (keyToTest) {
+        headers['x-gemini-api-key'] = keyToTest;
+      }
+
+      const res = await fetch('/api/gemini-status', {
+        method: 'POST',
+        headers,
+      });
+      const data = await res.json();
+      setTestResult(data);
+    } catch (err: any) {
+      setTestResult({
+        connected: false,
+        message: 'Falha ao conectar com o servidor da aplicação.',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -123,6 +163,71 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                 Aguardando Chave
               </span>
+            )}
+          </div>
+
+          {/* Real-time Connection Diagnostic */}
+          <div className="p-3.5 rounded-xl border text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Activity className="h-4 w-4 text-[#132247] dark:text-[#EAA816]" />
+                <span className="font-bold text-slate-800 dark:text-slate-200">Diagnóstico da Conexão IA</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting}
+                className="px-3 py-1.5 bg-[#132247] hover:bg-[#1C3366] text-white text-[11px] font-bold rounded-lg border border-[#EAA816]/50 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3 w-3 text-[#EAA816] ${isTesting ? 'animate-spin' : ''}`} />
+                <span>{isTesting ? 'Testando...' : 'Testar Conexão Agora'}</span>
+              </button>
+            </div>
+
+            {testResult && (
+              <div
+                className={`p-3 rounded-lg border text-xs space-y-1.5 animate-fade-in ${
+                  testResult.connected
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    : 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold">
+                  {testResult.connected ? (
+                    <>
+                      <Wifi className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Conexão Operacional com Gemini Flash</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                      <span>Falha de Conexão</span>
+                    </>
+                  )}
+                </div>
+
+                <p className="text-[11px] leading-relaxed opacity-95">
+                  {testResult.message}
+                </p>
+
+                {testResult.connected && (
+                  <div className="pt-1 flex flex-wrap gap-2 text-[10px] text-emerald-800 dark:text-emerald-300">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 font-semibold border border-emerald-200 dark:border-emerald-800">
+                      Modelo: {testResult.activeModel}
+                    </span>
+                    {testResult.latencyMs && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 font-semibold border border-emerald-200 dark:border-emerald-800">
+                        Latência: {testResult.latencyMs}ms
+                      </span>
+                    )}
+                    {testResult.keySource && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 font-semibold border border-emerald-200 dark:border-emerald-800">
+                        Origem: {testResult.keySource}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
